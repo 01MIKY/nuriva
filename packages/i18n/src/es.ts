@@ -1,0 +1,71 @@
+import type { Catalog } from './types.js';
+
+/** Catálogo en español. Debe tener exactamente las mismas claves que en.ts. */
+export const es: Catalog = {
+  brand: { name: 'NURIVA', tagline: 'Cuidado en el que puedes confiar', network: 'Red Internacional de Cuidado' },
+  divisions: { kids: 'NURIVA Kids', pets: 'NURIVA Pets' },
+  services: {
+    occasional: 'Cuidado ocasional',
+    scheduled: 'Cuidado programado',
+    nanny: 'Niñera',
+    overnight: 'Cuidado nocturno',
+    school_pickup: 'Recogida escolar',
+    special_needs: 'Cuidado de necesidades especiales',
+    date_night: 'Noche libre',
+    dog_walking: 'Paseo de perros',
+    drop_in: 'Visita a domicilio',
+    pet_sitting: 'Cuidado de mascotas',
+    boarding: 'Alojamiento',
+    puppy_care: 'Cuidado de cachorros',
+    senior_pet_care: 'Cuidado de mascotas mayores',
+  },
+  bookingStatus: {
+    requested: 'Solicitada',
+    accepted: 'Confirmada',
+    declined: 'Rechazada',
+    cancelled: 'Cancelada',
+    in_progress: 'En curso',
+    completed: 'Completada',
+  },
+  vetting: {
+    steps: {
+      identity: 'Identidad',
+      background: 'Verificación de antecedentes',
+      interview: 'Entrevista',
+      training: 'Formación',
+      agreement: 'Acuerdo de cuidador',
+      final_approval: 'Aprobación final',
+    },
+    status: { not_started: 'Sin empezar', pending: 'En revisión', passed: 'Completado', failed: 'No aprobado' },
+    blocked: 'Podrás aceptar reservas cuando completes todos los pasos.',
+  },
+  auth: {
+    signIn: 'Iniciar sesión',
+    signOut: 'Cerrar sesión',
+    createAccount: 'Crear cuenta',
+    email: 'Correo electrónico',
+    password: 'Contraseña',
+    passwordHint: 'Al menos 12 caracteres.',
+    name: 'Nombre completo',
+    acceptTerms: 'Acepto los Términos del Servicio y la Política de Privacidad',
+  },
+  errors: {
+    validation: 'Revisa los campos marcados.',
+    invalid_credentials: 'Correo o contraseña incorrectos.',
+    email_taken: 'Ya existe una cuenta con este correo.',
+    unauthenticated: 'Inicia sesión para continuar.',
+    forbidden: 'Tu cuenta no tiene acceso a esto.',
+    not_found: 'No lo encontramos.',
+    rate_limited: 'Demasiados intentos. Espera unos minutos y vuelve a intentarlo.',
+    suspended: 'Esta cuenta está suspendida. Contacta con soporte.',
+    not_bookable: 'Este cuidador no está disponible para esta reserva.',
+    invalid_transition: 'Esta reserva ya no se puede cambiar de esa forma.',
+    internal: 'Algo falló de nuestro lado. Vuelve a intentarlo.',
+  },
+  safety: {
+    emergency: 'Si alguien está en peligro inmediato, llama al 911 ahora.',
+    disclaimer:
+      'NURIVA verifica la identidad y revisa los antecedentes, pero ninguna verificación puede garantizar la seguridad. Usa siempre tu propio criterio.',
+  },
+  common: { save: 'Guardar', cancel: 'Cancelar', continue: 'Continuar', back: 'Atrás', perHour: '{amount}/hora' },
+};
