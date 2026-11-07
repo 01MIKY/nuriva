@@ -33,7 +33,8 @@
 | `apps/web`: inicio público, registro (cliente y cuidador), login, mi cuenta, seguimiento de aprobación, EN/ES, instalable (PWA) | Hecho | 12 e2e (escritorio + móvil) |
 | Rediseño aprobado (prototipo del 7 nov): tarjetas Niños/Mascotas ilustradas, iconos, tarjeta de confianza, barra de progreso de aprobación | Hecho en `apps/web` | 12 e2e |
 | Bloque 2 · Mi hogar: hijos y mascotas (nombre/apodo y edad, alergias, medicación, indicaciones) y contacto de emergencia, todo cifrado; solo el dueño accede; auditoría sin texto sensible | Hecho | 10 API + 2 e2e |
-| `apps/caregiver`, `apps/admin` | Pendiente (bloques 3 y 4) | — |
+| Bloque 3 · Perfil y solicitud del cuidador (divisiones, servicios, tarifa, idiomas, titular, bio, código postal), con lo que falta para completarla; no puede tocar su aprobación | Hecho (en `apps/web`, ver ADR 0002) | 6 API + 2 e2e |
+| `apps/admin` | Pendiente (bloque 4) | — |
 | Infraestructura AWS (Terraform) | Pendiente: necesita cuenta AWS y aprobación de costes | — |
 
 ## Valores provisionales (requieren aprobación de negocio)

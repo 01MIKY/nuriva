@@ -5,3 +5,4 @@ export * from './bookings.js';
 export * from './vetting.js';
 export * from './roles.js';
 export * from './household.js';
+export * from './caregiver.js';

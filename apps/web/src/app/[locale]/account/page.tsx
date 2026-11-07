@@ -34,6 +34,7 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
 
   const vetting = user.role === 'caregiver' ? (await apiGet<Vetting>('/v1/caregiver/vetting', locale)).body : null;
   const household = user.role === 'client' ? (await apiGet<Household>('/v1/household', locale)).body : null;
+  const profile = user.role === 'caregiver' ? (await apiGet<{ gaps: string[] }>('/v1/caregiver/profile', locale)).body : null;
   const done = vetting ? vetting.steps.filter((s) => s.status === 'passed').length : 0;
   const firstName = user.name.split(' ')[0] ?? user.name;
 
@@ -46,6 +47,21 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
           <p className="n-muted">{t(user.role === 'caregiver' ? 'web.account.caregiverIntro' : 'web.account.clientIntro')}</p>
         </div>
       </div>
+
+      {profile && (
+        <Card className={profile.gaps.length ? 'gaps-card' : 'complete-card'}>
+          <div className="household">
+            <span className="household-icon" aria-hidden="true"><Icon name="user" /></span>
+            <div className="n-stack" style={{ ['--gap' as string]: '6px' }}>
+              <h2 className="card-title">{t(profile.gaps.length ? 'web.care.gapsTitle' : 'web.care.completeTitle')}</h2>
+              {profile.gaps.length
+                ? <ul className="gap-list">{profile.gaps.map((g) => <li key={g}>{t(`web.care.gaps.${g as 'headline'}`)}</li>)}</ul>
+                : <p className="n-muted">{t('web.care.completeBody')}</p>}
+              <Link className={buttonClass(profile.gaps.length ? 'primary' : 'quiet')} href={`/${locale}/care/profile`}>{t('web.care.editProfile')}</Link>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {vetting && (
         <Card className="approval-card">

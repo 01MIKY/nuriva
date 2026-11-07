@@ -24,9 +24,9 @@ Cada bloque termina con: tests en verde, demo, documentación actualizada (`docs
 - [x] Servidor: hijos y mascotas con datos cifrados, contactos de emergencia
 - [x] Pantallas: añadir y editar hijos y mascotas (alergias, medicación, notas)
 
-**Bloque 3: app de cuidadores, base**
-- [ ] Registro de cuidador y solicitud (experiencia, servicios, idiomas)
-- [ ] Seguimiento de aprobación paso a paso
+**Bloque 3: app de cuidadores, base** (hecho)
+- [x] Registro de cuidador y solicitud (experiencia, servicios, idiomas)
+- [x] Seguimiento de aprobación paso a paso
 
 **Bloque 4: panel de administración, base**
 - [ ] Lista de solicitudes de cuidadores y ficha de cada cuidador
