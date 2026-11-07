@@ -9,6 +9,7 @@ import { registerSession } from './plugins/session.js';
 import { authRoutes } from './routes/auth.js';
 import { caregiverRoutes } from './routes/caregiver.js';
 import { adminRoutes } from './routes/admin.js';
+import { householdRoutes } from './routes/household.js';
 
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const app = Fastify({
@@ -39,6 +40,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
     await authRoutes(api, deps);
     await caregiverRoutes(api, deps);
     await adminRoutes(api, deps);
+    await householdRoutes(api, deps);
   }, { prefix: '/v1' });
 
   return app;

@@ -24,6 +24,8 @@ export const users = pgTable('users', {
   role: accountRole('role').notNull(),
   name: text('name').notNull(),
   phoneEnc: text('phone_enc'),
+  /** JSON {name, phone, relationship}, encrypted. */
+  emergencyContactEnc: text('emergency_contact_enc'),
   locale: locale('locale').notNull().default('en'),
   status: accountStatus('status').notNull().default('active'),
   mfaEnabled: boolean('mfa_enabled').notNull().default(false),

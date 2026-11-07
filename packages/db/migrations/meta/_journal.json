@@ -15,6 +15,13 @@
       "when": 1793653310502,
       "tag": "0001_audit_append_only",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794068299488,
+      "tag": "0002_household_emergency_contact",
+      "breakpoints": true
     }
   ]
 }

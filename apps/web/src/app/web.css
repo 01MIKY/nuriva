@@ -95,3 +95,31 @@
 .site-footer { border-top: 1px solid var(--line); padding-block: 32px calc(32px + env(safe-area-inset-bottom, 0px)); font-size: 0.88rem; }
 .footer-inner { display: grid; gap: 14px; }
 .footer-links { color: var(--muted); --gap: 18px; }
+
+/* Household */
+.privacy-note { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; color: var(--ok); }
+.empty-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; }
+.dep-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.dep-card { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 14px; border-radius: var(--r-lg); }
+.dep-child { background: var(--kids); }
+.dep-pet { background: var(--pets); }
+.dep-face { width: 52px; height: 52px; border-radius: 16px; background: var(--surface); display: grid; place-items: center; font: 800 1.3rem/1 var(--f-display); }
+.dep-body { display: grid; gap: 4px; min-width: 0; }
+.dep-name { font: 800 1.1rem/1.2 var(--f-display); }
+.dep-sub { font-size: 0.88rem; }
+.dep-actions { display: flex; gap: 12px; }
+.link-btn { background: none; border: 0; padding: 4px 0; font: 700 0.88rem var(--f-body); color: var(--fg); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.link-btn.danger { color: var(--n-danger); }
+.confirm { display: grid; gap: 10px; margin-top: 8px; padding: 12px; border-radius: var(--r-md); background: var(--surface); }
+.btn-danger { background: var(--n-danger); color: var(--n-white); }
+.dep-form-child { border-top: 6px solid var(--n-sand); }
+.dep-form-pet { border-top: 6px solid var(--n-sage); }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.n-textarea { min-height: 96px; resize: vertical; font: 400 1rem var(--f-body); }
+.ec-view { display: grid; gap: 2px; padding: 12px 14px; border-radius: var(--r-md); background: var(--surface-2); }
+.sr-status:empty { display: none; }
+@media (max-width: 520px) {
+  .dep-card { grid-template-columns: 44px minmax(0, 1fr); }
+  .dep-face { width: 44px; height: 44px; }
+  .dep-actions { grid-column: 2; }
+}

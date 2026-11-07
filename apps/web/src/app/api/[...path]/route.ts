@@ -26,12 +26,17 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
   const ip = req.headers.get('x-forwarded-for');
   if (ip) headers.set('x-forwarded-for', ip);
 
+  // Forward a body only when there is one: an empty string would make fetch add a text/plain
+  // content type, which the API rejects by design (JSON-only CSRF defence).
+  const raw = ['GET', 'HEAD', 'DELETE'].includes(req.method) ? '' : await req.text();
+  if (!raw) headers.delete('content-type');
+
   let res: Response;
   try {
     res = await fetch(target, {
       method: req.method,
       headers,
-      body: ['GET', 'HEAD'].includes(req.method) ? undefined : await req.text(),
+      body: raw || undefined,
       cache: 'no-store',
       redirect: 'manual',
     });

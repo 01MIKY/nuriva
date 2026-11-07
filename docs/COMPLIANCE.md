@@ -22,6 +22,7 @@
 - **Marca:** búsqueda de NURIVA en USPTO y EUIPO y compra de dominios.
 
 ## Cómo lo aplica el software
+- **Minimización de datos de menores:** solo nombre o apodo y edad en años. Sin fecha de nacimiento, fotos ni colegio. Todo cifrado y visible solo para el dueño (y en el futuro, para el cuidador de una reserva aceptada). Pregunta para el abogado: retención y borrado de estos datos al cerrar la cuenta.
 - **Gate de servicios:** ningún servicio se puede reservar sin una fila activa en `service_activations` con `compliance_ref` (referencia al documento de aprobación) creada por un superadmin. Cada cambio queda auditado.
 - **Servicios marcados para revisión de abogado** (`COUNSEL_REVIEW_SERVICES`): Kids · necesidades especiales, Kids · nocturno, Pets · alojamiento.
 - **Términos:** se guardan la versión aceptada (`terms_version`) y la fecha de aceptación de cada usuario.

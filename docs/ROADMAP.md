@@ -20,9 +20,9 @@ Cada bloque termina con: tests en verde, demo, documentación actualizada (`docs
 - [x] Tests de las pantallas en inglés y español
 - [x] Rediseño más visual aprobado por el propietario (prototipo interactivo)
 
-**Bloque 2: mi hogar** (siguiente)
-- [ ] Servidor: hijos y mascotas con datos cifrados, contactos de emergencia
-- [ ] Pantallas: añadir y editar hijos y mascotas (alergias, medicación, notas)
+**Bloque 2: mi hogar** (hecho)
+- [x] Servidor: hijos y mascotas con datos cifrados, contactos de emergencia
+- [x] Pantallas: añadir y editar hijos y mascotas (alergias, medicación, notas)
 
 **Bloque 3: app de cuidadores, base**
 - [ ] Registro de cuidador y solicitud (experiencia, servicios, idiomas)

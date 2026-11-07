@@ -1,11 +1,20 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
-import { Alert, ArtKids, ArtPets, Badge, Card, Icon, StepList, type StepStatus } from '@nuriva/ui';
+import { Alert, ArtKids, ArtPets, Badge, Card, Icon, StepList, buttonClass, type StepStatus } from '@nuriva/ui';
+import type { Household } from '@/lib/household';
 import type { VettingStep } from '@nuriva/domain';
 import { resolveLocale, translator } from '@/lib/i18n';
 import { apiGet, type Me } from '@/lib/server-api';
 import { SignOutButtons } from '@/components/SignOutButtons';
+
+/** "2 hijos · 1 mascota" — singular/plural per language, zero counts omitted. */
+function householdSummary(t: ReturnType<typeof translator>, children: number, pets: number) {
+  const parts: string[] = [];
+  if (children) parts.push(children === 1 ? t('web.household.childOne') : t('web.household.childMany', { n: children }));
+  if (pets) parts.push(pets === 1 ? t('web.household.petOne') : t('web.household.petMany', { n: pets }));
+  return parts.join(' · ');
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   return { title: translator(await resolveLocale(params))('web.nav.account'), robots: { index: false } };
@@ -24,6 +33,7 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
   if (!user) redirect(`/${locale}/signin`);
 
   const vetting = user.role === 'caregiver' ? (await apiGet<Vetting>('/v1/caregiver/vetting', locale)).body : null;
+  const household = user.role === 'client' ? (await apiGet<Household>('/v1/household', locale)).body : null;
   const done = vetting ? vetting.steps.filter((s) => s.status === 'passed').length : 0;
   const firstName = user.name.split(' ')[0] ?? user.name;
 
@@ -80,12 +90,12 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
           <Card>
             <div className="household">
               <span className="household-icon" aria-hidden="true"><Icon name="home" /></span>
-              <div className="n-stack" style={{ ['--gap' as string]: '4px' }}>
-                <div className="approval-top">
-                  <h2 className="card-title">{t('web.account.householdTitle')}</h2>
-                  <Badge>{t('web.account.soonBadge')}</Badge>
-                </div>
-                <p className="n-muted">{t('web.account.householdSoon')}</p>
+              <div className="n-stack" style={{ ['--gap' as string]: '6px' }}>
+                <h2 className="card-title">{t('web.account.householdTitle')}</h2>
+                <p className="n-muted">{household && household.dependents.length > 0
+                  ? householdSummary(t, household.dependents.filter((d) => d.kind === 'child').length, household.dependents.filter((d) => d.kind === 'pet').length)
+                  : t('web.household.emptyBody')}</p>
+                <Link className={buttonClass('primary')} href={`/${locale}/household`}>{t('web.household.manage')}</Link>
               </div>
             </div>
           </Card>
