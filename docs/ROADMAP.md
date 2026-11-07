@@ -28,10 +28,10 @@ Cada bloque termina con: tests en verde, demo, documentación actualizada (`docs
 - [x] Registro de cuidador y solicitud (experiencia, servicios, idiomas)
 - [x] Seguimiento de aprobación paso a paso
 
-**Bloque 4: panel de administración, base**
-- [ ] Lista de solicitudes de cuidadores y ficha de cada cuidador
-- [ ] Registrar pasos de selección con evidencia y activar servicios
-- [ ] Herramienta para crear el primer superadmin
+**Bloque 4: panel de administración, base** (hecho)
+- [x] Lista de solicitudes de cuidadores y ficha de cada cuidador
+- [x] Registrar pasos de selección con evidencia y activar servicios
+- [x] Herramienta para crear el primer superadmin
 
 **Bloque 5: doble verificación (MFA)**
 - [ ] Códigos TOTP (app de autenticación) obligatorios para cuidadores y admins

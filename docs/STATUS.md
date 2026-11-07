@@ -28,13 +28,13 @@
 | API: activación de servicios con referencia de cumplimiento | Hecho | 1 |
 | CI (GitHub Actions con PostgreSQL + e2e) | Escrito; primera ejecución en GitHub sin revisar todavía | — |
 | MFA (TOTP) para cuidadores y admins | **Pendiente**. Mientras no exista, staging y producción bloquean el panel de admin | — |
-| Script para crear el primer superadmin | Pendiente | — |
 | `packages/ui`: sistema de diseño (tokens, logo, botones, campos, tarjetas, avisos, seguimiento de pasos) | Hecho | cubierto por e2e |
 | `apps/web`: inicio público, registro (cliente y cuidador), login, mi cuenta, seguimiento de aprobación, EN/ES, instalable (PWA) | Hecho | 12 e2e (escritorio + móvil) |
 | Rediseño aprobado (prototipo del 7 nov): tarjetas Niños/Mascotas ilustradas, iconos, tarjeta de confianza, barra de progreso de aprobación | Hecho en `apps/web` | 12 e2e |
 | Bloque 2 · Mi hogar: hijos y mascotas (nombre/apodo y edad, alergias, medicación, indicaciones) y contacto de emergencia, todo cifrado; solo el dueño accede; auditoría sin texto sensible | Hecho | 10 API + 2 e2e |
 | Bloque 3 · Perfil y solicitud del cuidador (divisiones, servicios, tarifa, idiomas, titular, bio, código postal), con lo que falta para completarla; no puede tocar su aprobación | Hecho (en `apps/web`, ver ADR 0002) | 6 API + 2 e2e |
-| `apps/admin` | Pendiente (bloque 4) | — |
+| Bloque 4 · `apps/admin`: acceso solo para el equipo, lista de cuidadores con filtros, ficha con perfil, pasos de selección con evidencia obligatoria (antecedentes solo Trust & Safety), historial restringido y auditado, registro de cumplimiento (solo superadmin), auditoría; menú según permisos | Hecho | 7 API + 2 e2e |
+| Herramienta `create-staff` (única forma de crear administradores; contraseña temporal de un solo uso) | Hecho | 2 |
 | Infraestructura AWS (Terraform) | Pendiente: necesita cuenta AWS y aprobación de costes | — |
 
 ## Valores provisionales (requieren aprobación de negocio)

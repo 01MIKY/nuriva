@@ -29,6 +29,13 @@ export default defineConfig({
       timeout: 60_000,
     },
     {
+      command: 'pnpm --filter @nuriva/admin exec next start -p 3200',
+      url: 'http://localhost:3200/en/login',
+      env: { API_ORIGIN: 'http://localhost:4100' },
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    {
       command: 'pnpm --filter @nuriva/web exec next start -p 3100',
       url: 'http://localhost:3100/en',
       env: { API_ORIGIN: 'http://localhost:4100' },

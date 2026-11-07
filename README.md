@@ -10,13 +10,14 @@ Plataforma de cuidado infantil (**NURIVA Kids**) y de mascotas (**NURIVA Pets**)
 apps/api            API REST (Fastify + TypeScript)
 apps/web            App de clientes (Next.js, /en y /es, instalable en el móvil)
 packages/ui         Sistema de diseño NURIVA (tokens + componentes React)
+apps/admin          Panel privado de administración (Next.js, puerto 3002)
 packages/domain     Reglas de negocio puras: precios, reservas, selección de cuidadores, permisos
 packages/i18n       Traducciones EN/ES con paridad verificada por tipos y tests
 packages/db         Esquema PostgreSQL (Drizzle), migraciones, cifrado de campos
 docs/               Arquitectura, seguridad, cumplimiento, integraciones, decisiones (ADR)
 ```
 
-Pendiente: `apps/caregiver`, `apps/admin`, infraestructura Terraform. Plan completo en [`docs/ROADMAP.md`](docs/ROADMAP.md).
+Clientes y cuidadores comparten `apps/web` (ver ADR 0002). Pendiente: infraestructura Terraform. Plan completo en [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Puesta en marcha local
 
@@ -31,7 +32,14 @@ pnpm db:migrate
 pnpm test
 pnpm dev:api                        # http://localhost:4000/health
 pnpm --filter @nuriva/web dev       # http://localhost:3000 (en otra terminal)
+pnpm dev:admin                      # http://localhost:3002 (panel de administración)
 pnpm e2e                            # tests de navegador (EN/ES, escritorio y móvil)
+```
+
+Crear el primer administrador (la única forma de crear cuentas de staff):
+
+```bash
+DATABASE_URL=... pnpm --filter @nuriva/api create-staff --email tu@nuriva.com --name "Tu Nombre" --roles superadmin
 ```
 
 ## Entornos

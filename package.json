@@ -12,7 +12,9 @@
     "db:generate": "pnpm --filter @nuriva/db generate",
     "db:migrate": "pnpm --filter @nuriva/db migrate",
     "dev:api": "pnpm --filter @nuriva/api dev",
-    "e2e": "pnpm --filter @nuriva/web build && playwright test"
+    "e2e": "pnpm --filter @nuriva/web build && pnpm --filter @nuriva/admin build && playwright test",
+    "dev:admin": "pnpm --filter @nuriva/admin dev",
+    "dev:web": "pnpm --filter @nuriva/web dev"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
