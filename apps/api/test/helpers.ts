@@ -10,7 +10,13 @@ import { buildApp } from '../src/app.js';
 export const TEST_DB = process.env.TEST_DATABASE_URL ?? 'postgres://nuriva_dev:nuriva_dev_local_only@localhost:5432/nuriva_test';
 
 export async function setup() {
-  await runMigrations(TEST_DB);
+  try {
+    await runMigrations(TEST_DB);
+  } catch (e) {
+    const msg = String((e as Error & { cause?: Error }).cause?.message ?? (e as Error).message);
+    if (/ECONNREFUSED/.test(msg)) throw new Error(`PostgreSQL is not reachable at ${TEST_DB}. Start it (e.g. "service postgresql start") — see README.`);
+    throw e;
+  }
   const config = loadConfig({
     NURIVA_ENV: 'test',
     DATABASE_URL: TEST_DB,
