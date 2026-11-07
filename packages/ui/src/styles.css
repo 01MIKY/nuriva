@@ -1,0 +1,123 @@
+/* NURIVA design system — tokens + base components.
+   Brand palette is fixed (navy, sand, cream, sage, white). Sage Ink and Sand Ink are the
+   accessible text variants of sage and sand (contrast ≥ 4.5:1 on cream). */
+:root {
+  --n-navy: #172A43;
+  --n-sand: #E7BFA0;
+  --n-cream: #F5F2EC;
+  --n-sage: #8FAE9D;
+  --n-white: #FFFFFF;
+  --n-sage-ink: #4A6B5B;
+  --n-sand-ink: #9A5B34;
+  --n-danger: #A23B3B;
+
+  --bg: var(--n-cream);
+  --surface: var(--n-white);
+  --surface-2: #EFE6DC;
+  --fg: var(--n-navy);
+  --muted: #5A6577;
+  --line: #DCD6CC;
+  --primary: var(--n-navy);
+  --primary-fg: var(--n-cream);
+  --focus: #C98A5E;
+  --ok: var(--n-sage-ink);
+  --warn: var(--n-sand-ink);
+
+  --f-display: var(--font-display), "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: var(--font-body), "Segoe UI", system-ui, sans-serif;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 20px;
+  --shadow: 0 1px 2px rgb(23 42 67 / 6%), 0 8px 24px rgb(23 42 67 / 6%);
+  --gutter: max(16px, env(safe-area-inset-left, 0px));
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0E1A2B;
+    --surface: #172A43;
+    --surface-2: #1D3352;
+    --fg: #F5F2EC;
+    --muted: #A9B3C1;
+    --line: #2B405E;
+    --primary: var(--n-sand);
+    --primary-fg: var(--n-navy);
+    --ok: var(--n-sage);
+    --warn: var(--n-sand);
+    --n-danger: #F09A9A;
+    color-scheme: dark;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.6 var(--f-body); }
+h1, h2, h3, h4 { font-family: var(--f-display); line-height: 1.15; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+a { color: inherit; }
+img { max-width: 100%; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+.n-container { width: 100%; max-width: 1120px; margin: 0 auto; padding-left: var(--gutter); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.n-eyebrow { font: 600 0.75rem/1.2 var(--f-body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.n-muted { color: var(--muted); }
+.n-stack { display: grid; gap: var(--gap, 16px); }
+.n-row { display: flex; flex-wrap: wrap; gap: var(--gap, 12px); align-items: center; }
+
+/* Logo */
+.n-logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+.n-logo-word { font: 700 1.15rem/1 var(--f-display); letter-spacing: 0.22em; }
+
+/* Buttons */
+.n-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 20px;
+  border-radius: var(--r-md); border: 1.5px solid transparent; font: 600 1rem/1 var(--f-body); text-decoration: none; cursor: pointer;
+  transition: transform 120ms ease, background-color 120ms ease; }
+.n-btn:active { transform: translateY(1px); }
+.n-btn[disabled], .n-btn[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
+.n-btn-primary { background: var(--primary); color: var(--primary-fg); }
+.n-btn-secondary { background: transparent; color: var(--fg); border-color: currentColor; }
+.n-btn-quiet { background: var(--surface-2); color: var(--fg); }
+.n-btn-block { width: 100%; }
+
+/* Forms */
+.n-field { display: grid; gap: 6px; }
+.n-label { font-weight: 600; font-size: 0.92rem; }
+.n-input { width: 100%; min-height: 48px; padding: 10px 14px; border-radius: var(--r-md); border: 1.5px solid var(--line);
+  background: var(--surface); color: var(--fg); font: 400 1rem var(--f-body); }
+.n-input:focus { border-color: var(--fg); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 40%, transparent); }
+.n-input[aria-invalid="true"] { border-color: var(--n-danger); }
+.n-hint { font-size: 0.82rem; color: var(--muted); }
+.n-error { font-size: 0.85rem; color: var(--n-danger); }
+.n-check { display: flex; gap: 10px; align-items: flex-start; font-size: 0.92rem; cursor: pointer; }
+.n-check input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--n-navy); flex: none; }
+
+.n-choice { display: grid; gap: 4px; padding: 14px 16px; border: 1.5px solid var(--line); border-radius: var(--r-md); background: var(--surface); cursor: pointer; }
+.n-choice:has(input:checked) { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
+.n-choice input { position: absolute; opacity: 0; pointer-events: none; }
+.n-choice-title { font-weight: 600; }
+.n-choice-hint { font-size: 0.85rem; color: var(--muted); }
+
+/* Surfaces */
+.n-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 24px; }
+.n-alert { padding: 12px 14px; border-radius: var(--r-md); font-size: 0.92rem; border: 1px solid; }
+.n-alert-error { color: var(--n-danger); border-color: color-mix(in srgb, var(--n-danger) 40%, transparent); background: color-mix(in srgb, var(--n-danger) 8%, transparent); }
+.n-alert-info { color: var(--fg); border-color: var(--line); background: var(--surface-2); }
+
+/* Badges */
+.n-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; }
+.n-badge-ok { background: color-mix(in srgb, var(--n-sage) 28%, transparent); color: var(--ok); }
+.n-badge-pending { background: color-mix(in srgb, var(--n-sand) 38%, transparent); color: var(--warn); }
+.n-badge-neutral { background: var(--surface-2); color: var(--muted); }
+.n-badge-danger { background: color-mix(in srgb, var(--n-danger) 14%, transparent); color: var(--n-danger); }
+
+/* Step tracker */
+.n-steps { list-style: none; margin: 0; padding: 0; display: grid; }
+.n-step { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.n-step:last-child { border-bottom: 0; }
+.n-step-dot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font: 700 0.75rem/1 var(--f-body); border: 2px solid var(--line); }
+.n-step[data-status="passed"] .n-step-dot { background: var(--ok); border-color: var(--ok); color: var(--n-white); }
+.n-step[data-status="pending"] .n-step-dot { border-color: var(--warn); color: var(--warn); }
+.n-step[data-status="failed"] .n-step-dot { border-color: var(--n-danger); color: var(--n-danger); }

@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-Última actualización: 2 nov 2026. Solo figura como "Hecho" lo que tiene tests automáticos en verde.
+Última actualización: 7 nov 2026. Solo figura como "Hecho" lo que tiene tests automáticos en verde.
 
 ## Decisiones aprobadas por el propietario
 
@@ -11,7 +11,7 @@
 | D3 | PWA primero, apps nativas en fase 7 | Aprobado |
 | D4 | Sandbox: Stripe Connect + Identity, Checkr, Twilio + Postmark | Aprobado. **Faltan las cuentas y claves de prueba** |
 | D5 | Modelo legal | Recomendación: marketplace. **Pendiente de abogado** |
-| D6 | Repositorio GitHub | **Pendiente**: GitHub no está conectado a esta sesión |
+| D6 | Repositorio GitHub | Hecho: `01MIKY/nuriva` (privado) |
 
 ## Fase 1 — Cimientos
 
@@ -26,11 +26,12 @@
 | API: registro, login, logout, sesiones revocables, Argon2id, límites de intentos | Hecho | 9 |
 | API: selección de cuidadores por admin, con evidencia obligatoria y antecedentes restringidos | Hecho | 8 |
 | API: activación de servicios con referencia de cumplimiento | Hecho | 1 |
-| CI (GitHub Actions con PostgreSQL) | Escrito, **no ejecutado** (no hay repositorio) | — |
+| CI (GitHub Actions con PostgreSQL + e2e) | Escrito; primera ejecución en GitHub sin revisar todavía | — |
 | MFA (TOTP) para cuidadores y admins | **Pendiente**. Mientras no exista, staging y producción bloquean el panel de admin | — |
 | Script para crear el primer superadmin | Pendiente | — |
-| `packages/ui` (sistema de diseño en React) | Pendiente | — |
-| `apps/web`, `apps/caregiver`, `apps/admin` (Next.js) | Pendiente | — |
+| `packages/ui`: sistema de diseño (tokens, logo, botones, campos, tarjetas, avisos, seguimiento de pasos) | Hecho | cubierto por e2e |
+| `apps/web`: inicio público, registro (cliente y cuidador), login, mi cuenta, seguimiento de aprobación, EN/ES, instalable (PWA) | Hecho | 12 e2e (escritorio + móvil) |
+| `apps/caregiver`, `apps/admin` | Pendiente (bloques 3 y 4) | — |
 | Infraestructura AWS (Terraform) | Pendiente: necesita cuenta AWS y aprobación de costes | — |
 
 ## Valores provisionales (requieren aprobación de negocio)

@@ -8,13 +8,15 @@ Plataforma de cuidado infantil (**NURIVA Kids**) y de mascotas (**NURIVA Pets**)
 
 ```
 apps/api            API REST (Fastify + TypeScript)
+apps/web            App de clientes (Next.js, /en y /es, instalable en el móvil)
+packages/ui         Sistema de diseño NURIVA (tokens + componentes React)
 packages/domain     Reglas de negocio puras: precios, reservas, selección de cuidadores, permisos
 packages/i18n       Traducciones EN/ES con paridad verificada por tipos y tests
 packages/db         Esquema PostgreSQL (Drizzle), migraciones, cifrado de campos
 docs/               Arquitectura, seguridad, cumplimiento, integraciones, decisiones (ADR)
 ```
 
-Pendiente en Fase 1: `apps/web` (clientes), `apps/caregiver`, `apps/admin`, `packages/ui`, infraestructura Terraform.
+Pendiente: `apps/caregiver`, `apps/admin`, infraestructura Terraform. Plan completo en [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Puesta en marcha local
 
@@ -28,6 +30,8 @@ cp .env.example .env                # y genera NURIVA_DATA_KEYS
 pnpm db:migrate
 pnpm test
 pnpm dev:api                        # http://localhost:4000/health
+pnpm --filter @nuriva/web dev       # http://localhost:3000 (en otra terminal)
+pnpm e2e                            # tests de navegador (EN/ES, escritorio y móvil)
 ```
 
 ## Entornos
