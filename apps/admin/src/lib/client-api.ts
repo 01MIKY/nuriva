@@ -27,3 +27,6 @@ export async function apiSend<T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path
 }
 
 export const apiPost = <T,>(path: string, body: unknown, locale: Locale) => apiSend<T>('POST', path, body, locale);
+
+/** Adapter for shared UI components (e.g. two-step verification) that take a `send` function. */
+export const makeSend = (locale: Locale) => <T,>(method: 'GET' | 'POST', path: string, body?: unknown) => apiSend<T>(method, path, body ?? null, locale);

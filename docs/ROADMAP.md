@@ -7,7 +7,8 @@ Cada bloque termina con: tests en verde, demo, documentación actualizada (`docs
 - [x] Fase 0: blueprint (arquitectura, sitemap, diseño, riesgos)
 - [x] Fase 1A: cimientos del servidor (API, base de datos, seguridad, inglés/español). 57 tests
 - [x] Código guardado en GitHub (`01MIKY/nuriva`)
-- [ ] **Fase 1B: primeras apps ← estamos aquí**
+- [x] Fase 1B: primeras apps (bloques 1 a 5)
+- [ ] **Fase 2: selección con proveedores reales en modo prueba ← siguiente (necesita claves)**
 
 ## Fase 1B: primeras apps (web instalable en el móvil)
 
@@ -33,8 +34,8 @@ Cada bloque termina con: tests en verde, demo, documentación actualizada (`docs
 - [x] Registrar pasos de selección con evidencia y activar servicios
 - [x] Herramienta para crear el primer superadmin
 
-**Bloque 5: doble verificación (MFA)**
-- [ ] Códigos TOTP (app de autenticación) obligatorios para cuidadores y admins
+**Bloque 5: doble verificación (MFA)** (hecho)
+- [x] Códigos TOTP (app de autenticación) obligatorios para cuidadores y admins
 
 ## Fase 2: selección de cuidadores con proveedores reales en modo prueba
 Requiere: claves de prueba de Stripe Identity y Checkr.

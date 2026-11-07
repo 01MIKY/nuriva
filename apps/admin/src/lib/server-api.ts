@@ -21,5 +21,7 @@ export async function apiGet<T>(path: string, locale: Locale): Promise<{ status:
 }
 
 export interface Me {
+  /** Staging/production: staff and caregivers must enrol MFA before anything else. */
+  mfaSetupRequired?: boolean;
   user: null | { id: number; email: string; role: 'client' | 'caregiver' | 'admin'; name: string; locale: Locale; staffRoles: StaffRole[]; mfaEnabled: boolean };
 }

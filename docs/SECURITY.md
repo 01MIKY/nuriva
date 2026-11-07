@@ -6,7 +6,13 @@
 - Cookie `httpOnly`, `SameSite=Lax`. En staging y producción: `Secure` y prefijo `__Host-`.
 - Mismo error y tiempo de respuesta para "email desconocido" y "contraseña incorrecta", para no revelar qué cuentas existen.
 - Límite de intentos: 10 por 15 minutos en registro y login; 300 por minuto en general.
-- **Pendiente:** MFA (TOTP) obligatorio para cuidadores y admins. Hasta que exista, staging y producción deniegan todo acceso de admin.
+- **Verificación en dos pasos (TOTP, RFC 6238)**, compatible con Google Authenticator, 1Password, Authy y similares:
+  - Alta con código QR. El secreto queda cifrado y pendiente hasta confirmarlo con un código válido.
+  - 10 códigos de recuperación de un solo uso, mostrados una única vez. Solo se guarda su hash.
+  - Inicio de sesión en dos pasos: el reto dura 5 minutos, es de un solo uso y admite como máximo 5 intentos. No se crea sesión hasta superarlo.
+  - Protección contra reutilización: un código ya aceptado no vuelve a valer.
+  - Al activarla se cierran las sesiones de los demás dispositivos.
+  - **Obligatoria en staging y producción para cuidadores y staff.** Sin ella solo pueden usar `/auth/*` para activarla, y no pueden desactivarla. Los clientes pueden activarla y desactivarla, con contraseña y código.
 
 ## Autorización (mínimo privilegio)
 - Tipos de cuenta: `client`, `caregiver`, `admin`. Nadie puede registrarse como admin.

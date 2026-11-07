@@ -12,6 +12,7 @@ export async function requireStaff(locale: Locale): Promise<Staff> {
   const user = me.body?.user;
   if (!user) redirect(`/${locale}/login`);
   if (user.role !== 'admin') redirect(`/${locale}/no-access`);
+  if (me.body?.mfaSetupRequired) redirect(`/${locale}/security`);
   return user;
 }
 

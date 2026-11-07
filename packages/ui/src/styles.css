@@ -160,3 +160,15 @@ img { max-width: 100%; }
 .n-okdot { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--n-sage) 30%, transparent); color: var(--ok); }
 .n-trust .n-okdot { background: var(--n-sage); color: var(--n-navy); }
 .n-okdot svg { width: 14px; height: 14px; stroke-width: 3; }
+
+/* Two-step verification */
+.n-mfa-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.n-mfa-title { font-size: 1.2rem; font-weight: 800; }
+.n-mfa-sub { font-size: 1.05rem; font-weight: 800; }
+.n-mfa-qr { width: 200px; max-width: 100%; background: #FFFFFF; padding: 8px; border-radius: var(--r-md); border: 1px solid var(--line); }
+.n-mfa-qr svg { display: block; width: 100%; height: auto; }
+.n-mfa-secret { font-size: 1rem; letter-spacing: 0.08em; background: var(--surface-2); padding: 10px 12px; border-radius: var(--r-sm); overflow-wrap: anywhere; }
+.n-mfa-codes { background: var(--surface-2); border-radius: var(--r-md); padding: 16px; }
+.n-mfa-codelist { margin: 0; padding-left: 22px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px 16px; }
+.n-mfa-codelist code { font-size: 0.95rem; }
+.n-linkbtn { background: none; border: 0; padding: 4px 0; font: 600 0.9rem var(--f-body); color: var(--fg); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; justify-self: start; }

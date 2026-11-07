@@ -27,7 +27,7 @@
 | API: selección de cuidadores por admin, con evidencia obligatoria y antecedentes restringidos | Hecho | 8 |
 | API: activación de servicios con referencia de cumplimiento | Hecho | 1 |
 | CI (GitHub Actions con PostgreSQL + e2e) | Escrito; primera ejecución en GitHub sin revisar todavía | — |
-| MFA (TOTP) para cuidadores y admins | **Pendiente**. Mientras no exista, staging y producción bloquean el panel de admin | — |
+| Bloque 5 · Verificación en dos pasos (TOTP + códigos de recuperación), obligatoria en staging y producción para cuidadores y staff; pantallas en la app y en el panel | Hecho | 4 RFC + 12 API + 2 e2e |
 | `packages/ui`: sistema de diseño (tokens, logo, botones, campos, tarjetas, avisos, seguimiento de pasos) | Hecho | cubierto por e2e |
 | `apps/web`: inicio público, registro (cliente y cuidador), login, mi cuenta, seguimiento de aprobación, EN/ES, instalable (PWA) | Hecho | 12 e2e (escritorio + móvil) |
 | Rediseño aprobado (prototipo del 7 nov): tarjetas Niños/Mascotas ilustradas, iconos, tarjeta de confianza, barra de progreso de aprobación | Hecho en `apps/web` | 12 e2e |

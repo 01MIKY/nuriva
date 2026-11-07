@@ -6,6 +6,9 @@ import { DomainError, hasPermission, type AccountRole, type Permission } from '@
 import { negotiateLocale, isLocale } from '@nuriva/i18n';
 import type { Deps } from '../lib/context.js';
 
+/** Roles that must use MFA in staging and production. */
+export const MFA_REQUIRED_ROLES: readonly AccountRole[] = ['admin', 'caregiver'];
+
 export const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
 export function cookieName(strict: boolean) {
@@ -31,6 +34,7 @@ export function clearSessionCookie(deps: Deps, reply: FastifyReply) {
 export function registerSession(app: FastifyInstance, deps: Deps) {
   app.decorateRequest('user', null);
   app.decorateRequest('locale', 'en');
+  app.decorateRequest('mfaMissing', false);
 
   app.addHook('onRequest', async (req) => {
     const q = req.query as Record<string, unknown> | undefined;
@@ -63,6 +67,7 @@ export function registerSession(app: FastifyInstance, deps: Deps) {
       locale: row.user.locale, staffRoles: roles, mfaEnabled: row.user.mfaEnabled, sessionId: row.sessionId,
     };
     if (!isLocale(q?.lang)) req.locale = row.user.locale;
+    req.mfaMissing = deps.config.strict && MFA_REQUIRED_ROLES.includes(row.user.role) && !row.user.mfaEnabled;
   });
 }
 
@@ -70,16 +75,17 @@ export function registerSession(app: FastifyInstance, deps: Deps) {
 export const requireRole = (...roles: AccountRole[]) => async (req: FastifyRequest) => {
   if (!req.user) throw new DomainError('unauthenticated', 'Sign in required', 401);
   if (roles.length && !roles.includes(req.user.role)) throw new DomainError('forbidden', 'Wrong account type', 403);
+  if (req.mfaMissing) throw new DomainError('mfa_required', 'Set up two-step verification first', 403);
 };
 
 /**
  * Route guard for the admin dashboard: staff permission + (in staging/production) MFA.
- * MFA enrolment is still to be built (Phase 1 remaining work), so strict envs deny all admin access until then.
+ * Staff without MFA can only reach /auth/* (to enrol) in staging and production.
  */
 export const requirePermission = (deps: Deps, perm: Permission) => async (req: FastifyRequest) => {
   if (!req.user) throw new DomainError('unauthenticated', 'Sign in required', 401);
   if (req.user.role !== 'admin' || !hasPermission(req.user.staffRoles, perm)) {
     throw new DomainError('forbidden', `Missing permission ${perm}`, 403);
   }
-  if (deps.config.strict && !req.user.mfaEnabled) throw new DomainError('forbidden', 'MFA required', 403);
+  if (req.mfaMissing) throw new DomainError('mfa_required', 'Set up two-step verification first', 403);
 };

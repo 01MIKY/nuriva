@@ -7,6 +7,7 @@ import { DomainError, VETTING_STEPS, SERVICES } from '@nuriva/domain';
 import type { Deps } from '../lib/context.js';
 import { audit } from '../lib/audit.js';
 import { createSession, clearSessionCookie, requireRole } from '../plugins/session.js';
+import { createLoginChallenge } from './mfa.js';
 
 // OWASP-recommended Argon2id parameters (19 MiB, 2 iterations).
 const ARGON = { memoryCost: 19456, timeCost: 2, parallelism: 1 } as const;
@@ -66,6 +67,12 @@ export async function authRoutes(app: FastifyInstance, deps: Deps) {
       throw new DomainError('invalid_credentials', 'Invalid credentials', 401);
     }
     if (u.status !== 'active') throw new DomainError('suspended', 'Suspended', 403);
+    if (u.mfaEnabled) {
+      // Password is correct but no session yet: the second step happens at /auth/mfa/verify.
+      const challenge = await createLoginChallenge(deps, u.id);
+      await audit(db, req, 'auth.mfa_challenge', `user:${u.id}`, {}, u.id);
+      return { mfaRequired: true, challenge };
+    }
     await createSession(deps, reply, req, u.id);
     await audit(db, req, 'auth.login', `user:${u.id}`, {}, u.id);
     return { user: { id: u.id, email: u.email, role: u.role, name: u.name, locale: u.locale } };
@@ -92,6 +99,6 @@ export async function authRoutes(app: FastifyInstance, deps: Deps) {
   app.get('/auth/me', async (req) => {
     if (!req.user) return { user: null };
     const { sessionId: _s, ...user } = req.user;
-    return { user };
+    return { user, mfaSetupRequired: req.mfaMissing };
   });
 }

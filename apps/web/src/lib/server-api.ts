@@ -20,5 +20,7 @@ export async function apiGet<T>(path: string, locale: Locale): Promise<{ status:
 }
 
 export interface Me {
-  user: null | { id: number; email: string; role: 'client' | 'caregiver' | 'admin'; name: string; locale: Locale };
+  /** Staging/production: staff and caregivers must enrol MFA before anything else. */
+  mfaSetupRequired?: boolean;
+  user: null | { id: number; email: string; role: 'client' | 'caregiver' | 'admin'; name: string; locale: Locale; mfaEnabled: boolean };
 }

@@ -48,6 +48,13 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
         </div>
       </div>
 
+      {me.body?.mfaSetupRequired && (
+        <Alert tone="error">
+          <strong>{t('mfa.setupRequiredTitle')}.</strong> {t('mfa.setupRequiredBody')}{' '}
+          <Link href={`/${locale}/account/security`}>{t('mfa.manage')}</Link>
+        </Alert>
+      )}
+
       {profile && (
         <Card className={profile.gaps.length ? 'gaps-card' : 'complete-card'}>
           <div className="household">
@@ -117,6 +124,20 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
           </Card>
         </>
       )}
+
+      <Card>
+        <div className="household">
+          <span className="household-icon" aria-hidden="true"><Icon name="shield" /></span>
+          <div className="n-stack" style={{ ['--gap' as string]: '6px' }}>
+            <div className="approval-top">
+              <h2 className="card-title">{t('mfa.title')}</h2>
+              <Badge tone={user.mfaEnabled ? 'ok' : 'neutral'}>{t(user.mfaEnabled ? 'mfa.statusOn' : 'mfa.statusOff')}</Badge>
+            </div>
+            <p className="n-muted">{t('mfa.intro')}</p>
+            <Link className={buttonClass('quiet')} href={`/${locale}/account/security`}>{t('mfa.manage')}</Link>
+          </div>
+        </div>
+      </Card>
 
       <SignOutButtons locale={locale} />
     </div>

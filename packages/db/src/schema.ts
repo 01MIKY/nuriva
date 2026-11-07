@@ -29,6 +29,11 @@ export const users = pgTable('users', {
   locale: locale('locale').notNull().default('en'),
   status: accountStatus('status').notNull().default('active'),
   mfaEnabled: boolean('mfa_enabled').notNull().default(false),
+  /** TOTP secret (base32), encrypted. Pending secret holds an enrolment not yet confirmed with a code. */
+  mfaSecretEnc: text('mfa_secret_enc'),
+  mfaPendingSecretEnc: text('mfa_pending_secret_enc'),
+  /** Last accepted TOTP time step — a code can never be used twice (replay protection). */
+  mfaLastStep: bigint('mfa_last_step', { mode: 'number' }),
   termsAcceptedAt: timestamp('terms_accepted_at', { withTimezone: true }).notNull(),
   termsVersion: text('terms_version').notNull(),
   createdAt: createdAt(),
@@ -127,3 +132,23 @@ export const auditLog = pgTable('audit_log', {
   ip: text('ip'),
   createdAt: createdAt(),
 }, (t) => [index('audit_log_target_idx').on(t.target), index('audit_log_actor_idx').on(t.actorId)]);
+
+/** One-time recovery codes for MFA. Only a SHA-256 hash is stored. */
+export const mfaRecoveryCodes = pgTable('mfa_recovery_codes', {
+  id: id(),
+  userId: fk('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  codeHash: text('code_hash').notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: createdAt(),
+}, (t) => [index('mfa_recovery_user_idx').on(t.userId)]);
+
+/** Second step of a sign-in with MFA: short-lived, single-use, attempt-limited. Token stored as a hash. */
+export const loginChallenges = pgTable('login_challenges', {
+  id: id(),
+  userId: fk('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  attempts: integer('attempts').notNull().default(0),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: createdAt(),
+}, (t) => [uniqueIndex('login_challenges_token_uq').on(t.tokenHash)]);

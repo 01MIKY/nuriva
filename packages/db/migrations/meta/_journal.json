@@ -22,6 +22,13 @@
       "when": 1794068299488,
       "tag": "0002_household_emergency_contact",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794070342183,
+      "tag": "0003_mfa",
+      "breakpoints": true
     }
   ]
 }

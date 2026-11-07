@@ -24,5 +24,7 @@ declare module 'fastify' {
   interface FastifyRequest {
     user: SessionUser | null;
     locale: Locale;
+    /** True when this account must enrol MFA before using anything except /auth/* (staging/production, staff + caregivers). */
+    mfaMissing: boolean;
   }
 }
