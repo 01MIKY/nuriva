@@ -18,6 +18,7 @@ Cada bloque termina con: tests en verde, demo, documentación actualizada (`docs
 - [x] Crear cuenta e iniciar sesión, conectados al servidor real
 - [x] Panel del cliente (vacío por ahora) y cerrar sesión
 - [x] Tests de las pantallas en inglés y español
+- [x] Rediseño más visual aprobado por el propietario (prototipo interactivo)
 
 **Bloque 2: mi hogar** (siguiente)
 - [ ] Servidor: hijos y mascotas con datos cifrados, contactos de emergencia
