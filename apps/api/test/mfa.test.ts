@@ -88,12 +88,16 @@ describe('MFA enrolment and two-step sign-in', () => {
     expect((await h.client().post('/v1/auth/mfa/verify', { challenge, code: '111111' })).body.error).toBe('challenge_expired');
   });
 
-  it('disabling needs the password and a fresh code', async () => {
-    expect((await ana.c.post('/v1/auth/mfa/disable', { password: 'wrong-password', code: codeFor(secret) })).status).toBe(401);
-    // advance past already-used steps by waiting is not practical; use a step ahead (within ±1 window)
-    const r = await ana.c.post('/v1/auth/mfa/disable', { password: 'correct-horse-battery-1', code: codeFor(secret, 1) });
-    // step +1 was already used for sign-in above → replay refused; documents that each code works once
+  it('disabling needs the correct password and refuses an already-used code (time-independent)', async () => {
+    const fresh = codeFor(secret, 1);
+    expect((await ana.c.post('/v1/auth/mfa/disable', { password: 'wrong-password', code: fresh })).status).toBe(401);
+    // Replay: the exact code of the last accepted time step must never work again.
+    const row = await h.db.execute(sql`select mfa_last_step from users where email = 'ana.mfa@example.com'`);
+    const lastStep = Number(row.rows[0]!.mfa_last_step);
+    const replay = totp(base32Decode(secret), lastStep);
+    const r = await ana.c.post('/v1/auth/mfa/disable', { password: 'correct-horse-battery-1', code: replay });
     expect(r.status).toBe(401);
+    expect((await ana.c.get('/v1/auth/mfa/status')).body.enabled).toBe(true);
   });
 
   it('a client can turn MFA off with password + an unused code, and then signs in with the password only', async () => {

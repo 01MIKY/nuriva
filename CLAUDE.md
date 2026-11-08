@@ -16,7 +16,7 @@ Three applications: client app, caregiver app, admin dashboard — all backed by
 - No secrets in source. Config via env (`.env.example`); staging/production refuse to boot without real secrets.
 
 ## Workflow for each feature
-Understand requirements → inspect architecture → plan → identify security/legal implications → implement → run `pnpm typecheck && pnpm test` → review → update docs (`docs/STATUS.md`).
+Understand requirements → inspect architecture → plan → identify security/legal implications → implement → run `pnpm verify` (must end with "all checks passed"; commit only then) → review → update docs (`docs/STATUS.md`).
 Ask the owner before major architecture, cost, provider or irreversible decisions.
 
 ## Commands

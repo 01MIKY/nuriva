@@ -14,7 +14,8 @@
     "dev:api": "pnpm --filter @nuriva/api dev",
     "e2e": "pnpm --filter @nuriva/web build && pnpm --filter @nuriva/admin build && playwright test",
     "dev:admin": "pnpm --filter @nuriva/admin dev",
-    "dev:web": "pnpm --filter @nuriva/web dev"
+    "dev:web": "pnpm --filter @nuriva/web dev",
+    "verify": "bash scripts/verify.sh"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
