@@ -69,8 +69,8 @@ test('families find approved caregivers and open their public profile (ES)', asy
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Camila D.');
   await expect(page.getByText('Controles completados por NURIVA')).toBeVisible();
   await expect(page.locator('.checks-list li')).toHaveCount(6);
-  await expect(page.getByRole('button', { name: 'Reservar' })).toBeDisabled();
-  await expect(page.getByText('Las reservas abren pronto.')).toBeVisible();
+  // Signed-out visitors are asked to sign in (booking requests are enabled in development/test only)
+  await expect(page.getByRole('link', { name: 'Inicia sesión para reservar' })).toBeVisible();
   const html = await page.content();
   expect(html).not.toContain(`camila.${run}@example.com`);
   expect(html).not.toContain('Duarte Soto');

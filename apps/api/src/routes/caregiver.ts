@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
-import { caregiverProfiles, vettingRecords } from '@nuriva/db';
-import { CaregiverProfileInput, VETTING_STEPS, missingSteps, profileGaps, DomainError, type CaregiverProfileView, type VettingState } from '@nuriva/domain';
+import { caregiverProfiles, vettingRecords, caregiverAvailability } from '@nuriva/db';
+import { CaregiverProfileInput, AvailabilityInput, VETTING_STEPS, missingSteps, profileGaps, DomainError, toMinutes, fromMinutes, type AvailabilityWindow, type CaregiverProfileView, type VettingState } from '@nuriva/domain';
 import type { Deps } from '../lib/context.js';
 import { audit } from '../lib/audit.js';
 import { requireRole } from '../plugins/session.js';
@@ -20,6 +20,13 @@ export async function loadProfile(deps: Deps, caregiverId: number): Promise<Care
     divisions: p.divisions, headline: p.headline, bio: p.bio, hourlyRateCents: p.hourlyRateCents,
     yearsExperience: p.yearsExperience, languages: p.languages, services: p.services, zip: p.zip,
   };
+}
+
+export async function loadAvailability(deps: Deps, caregiverId: number): Promise<AvailabilityWindow[]> {
+  const rows = await deps.db.select().from(caregiverAvailability).where(eq(caregiverAvailability.caregiverId, caregiverId));
+  return rows
+    .map((r) => ({ weekday: r.weekday, start: fromMinutes(r.startMinute), end: r.endMinute === 1440 ? '24:00' : fromMinutes(r.endMinute) }))
+    .sort((a, b) => a.weekday - b.weekday || toMinutes(a.start) - toMinutes(b.start));
 }
 
 export async function caregiverRoutes(app: FastifyInstance, deps: Deps) {
@@ -51,5 +58,22 @@ export async function caregiverRoutes(app: FastifyInstance, deps: Deps) {
     });
     const profile = await loadProfile(deps, req.user!.id);
     return { profile, gaps: profileGaps(profile) };
+  });
+
+  /** Weekly availability in Miami local time. Replaces the whole week atomically. */
+  app.get('/caregiver/availability', caregiver, async (req) => ({ windows: await loadAvailability(deps, req.user!.id) }));
+
+  app.put('/caregiver/availability', caregiver, async (req) => {
+    const { windows } = AvailabilityInput.parse(req.body);
+    await deps.db.transaction(async (tx) => {
+      await tx.delete(caregiverAvailability).where(eq(caregiverAvailability.caregiverId, req.user!.id));
+      if (windows.length) {
+        await tx.insert(caregiverAvailability).values(windows.map((w) => ({
+          caregiverId: req.user!.id, weekday: w.weekday, startMinute: toMinutes(w.start), endMinute: w.end === '24:00' ? 1440 : toMinutes(w.end),
+        })));
+      }
+      await audit(tx, req, 'caregiver.availability_update', `caregiver:${req.user!.id}`, { windows: windows.length });
+    });
+    return { windows: await loadAvailability(deps, req.user!.id) };
   });
 }

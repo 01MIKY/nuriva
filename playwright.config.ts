@@ -24,7 +24,8 @@ export default defineConfig({
     {
       command: 'pnpm --filter @nuriva/db migrate && pnpm --filter @nuriva/api start',
       url: 'http://localhost:4100/health',
-      env: { NURIVA_ENV: 'test', PORT: '4100', DATABASE_URL: DB, NURIVA_DATA_KEYS: KEY, AUTH_RATE_LIMIT: '1000' },
+      // All test users share one IP, so the per-IP budgets are raised for the test run only.
+      env: { NURIVA_ENV: 'test', PORT: '4100', DATABASE_URL: DB, NURIVA_DATA_KEYS: KEY, AUTH_RATE_LIMIT: '1000', RATE_LIMIT_PER_MINUTE: '100000' },
       reuseExistingServer: false,
       timeout: 60_000,
     },

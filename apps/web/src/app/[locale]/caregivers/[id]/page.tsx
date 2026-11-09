@@ -1,18 +1,19 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { CheckItem, Icon } from '@nuriva/ui';
+import { CheckItem, Icon, buttonClass } from '@nuriva/ui';
 import { formatMoney, type MessageKey } from '@nuriva/i18n';
 import { resolveLocale, translator } from '@/lib/i18n';
-import { apiGet } from '@/lib/server-api';
+import { apiGet, type Me } from '@/lib/server-api';
 import { avatarTint, type PublicProfile } from '@/lib/search';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-async function load(id: string, locale: 'en' | 'es') {
+async function loadFull(id: string, locale: 'en' | 'es') {
   if (!UUID.test(id)) return null;
-  return (await apiGet<{ caregiver: PublicProfile }>(`/v1/caregivers/${id}`, locale)).body?.caregiver ?? null;
+  return (await apiGet<{ caregiver: PublicProfile; bookingsEnabled: boolean }>(`/v1/caregivers/${id}`, locale)).body ?? null;
 }
+const load = async (id: string, locale: 'en' | 'es') => (await loadFull(id, locale))?.caregiver ?? null;
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -25,8 +26,10 @@ export default async function CaregiverProfilePage({ params }: { params: Promise
   const { id } = await params;
   const locale = await resolveLocale(params);
   const t = translator(locale);
-  const c = await load(id, locale);
-  if (!c) notFound();
+  const [full, me] = await Promise.all([loadFull(id, locale), apiGet<Me>('/v1/auth/me', locale)]);
+  if (!full) notFound();
+  const c = full.caregiver;
+  const user = me.body?.user ?? null;
   const since = new Intl.DateTimeFormat(locale === 'es' ? 'es-US' : 'en-US', { month: 'long', year: 'numeric', timeZone: 'America/New_York' }).format(new Date(c.memberSince));
   const firstDivision = c.divisions[0]!.division;
 
@@ -71,8 +74,21 @@ export default async function CaregiverProfilePage({ params }: { params: Promise
 
         <aside className="book-box" aria-label={t('web.profile.book')}>
           <span className="cg-price big">{formatMoney(locale, c.hourlyRateCents).replace(/\.00$/, '')}<small>{t('web.search.perHour')}</small></span>
-          <button type="button" className="n-btn n-btn-primary n-btn-block" disabled aria-describedby="book-soon">{t('web.profile.book')}</button>
-          <p id="book-soon" className="n-hint">{t('web.profile.bookingSoon')}</p>
+          {!full.bookingsEnabled ? (
+            <>
+              <button type="button" className="n-btn n-btn-primary n-btn-block" disabled aria-describedby="book-soon">{t('web.profile.book')}</button>
+              <p id="book-soon" className="n-hint">{t('web.profile.bookingSoon')}</p>
+            </>
+          ) : !user ? (
+            <Link className={buttonClass('primary', true)} href={`/${locale}/signin`}>{t('web.book.signInToBook')}</Link>
+          ) : user.role === 'client' ? (
+            <>
+              <Link className={buttonClass('primary', true)} href={`/${locale}/book/${c.id}`}>{t('web.profile.book')}</Link>
+              <p className="n-hint">{t('web.book.noCharge')}</p>
+            </>
+          ) : (
+            <p className="n-hint">{t('web.book.onlyFamilies')}</p>
+          )}
         </aside>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
@@ -12,24 +12,27 @@ import { adminRoutes } from './routes/admin.js';
 import { householdRoutes } from './routes/household.js';
 import { mfaRoutes } from './routes/mfa.js';
 import { searchRoutes } from './routes/search.js';
+import { bookingRoutes } from './routes/bookings.js';
 
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
-  const app = Fastify({
+  const options: FastifyServerOptions = {
     logger: deps.config.NURIVA_ENV === 'test' ? false : {
       level: deps.config.strict ? 'info' : 'debug',
       // Never log credentials or session cookies.
       redact: ['req.headers.cookie', 'req.headers.authorization', 'res.headers["set-cookie"]'],
     },
-    trustProxy: deps.config.strict,
+    // Trust exactly N proxy hops (same semantics as proxy-addr's numeric setting).
+    trustProxy: (_addr: string, hop: number) => hop < deps.config.trustedProxyHops,
     bodyLimit: 256 * 1024,
-  });
+  };
+  const app = Fastify(options);
 
   // Only JSON bodies are accepted: removes the text/plain parser that would allow "simple" cross-site POSTs.
   app.removeContentTypeParser('text/plain');
 
   await app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] } } });
   await app.register(cookie);
-  await app.register(rateLimit, { global: true, max: 300, timeWindow: '1 minute' });
+  await app.register(rateLimit, { global: true, max: deps.config.RATE_LIMIT_PER_MINUTE, timeWindow: '1 minute' });
   app.setErrorHandler(errorHandler);
   registerSession(app, deps);
 
@@ -45,6 +48,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
     await householdRoutes(api, deps);
     await mfaRoutes(api, deps);
     await searchRoutes(api, deps);
+    await bookingRoutes(api, deps);
   }, { prefix: '/v1' });
 
   return app;

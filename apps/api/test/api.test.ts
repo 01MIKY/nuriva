@@ -179,6 +179,15 @@ describe('compliance gate for services', () => {
   });
 });
 
+describe('client IP behind the web proxy', () => {
+  it('records the visitor IP forwarded by the trusted web proxy, not the proxy address', async () => {
+    await h.app.inject({ method: 'POST', url: '/v1/auth/login', payload: { email: 'nobody.ip@example.com', password: 'whatever-123456' },
+      headers: { 'x-forwarded-for': '203.0.113.7' } });
+    const r = await h.db.execute(sql`select ip from audit_log where action = 'auth.login_failed' order by id desc limit 1`);
+    expect(r.rows[0]!.ip).toBe('203.0.113.7');
+  });
+});
+
 describe('audit log integrity', () => {
   it('cannot be modified or deleted', async () => {
     const cause = (p: Promise<unknown>) => p.then(() => 'no error', (e: Error & { cause?: Error }) => e.cause?.message ?? e.message);

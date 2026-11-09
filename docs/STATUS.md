@@ -36,6 +36,8 @@
 | Bloque 4 · `apps/admin`: acceso solo para el equipo, lista de cuidadores con filtros, ficha con perfil, pasos de selección con evidencia obligatoria (antecedentes solo Trust & Safety), historial restringido y auditado, registro de cumplimiento (solo superadmin), auditoría; menú según permisos | Hecho | 7 API + 2 e2e |
 | Herramienta `create-staff` (única forma de crear administradores; contraseña temporal de un solo uso) | Hecho | 2 |
 | Fase 3A · Búsqueda pública y perfiles: solo cuidadores con los 6 pasos aprobados, perfil completo, cuenta activa y algún servicio activado en el registro de cumplimiento. Nombre público "Nombre + inicial", ID público aleatorio, sin correo ni código postal. Filtros por servicio, idioma y orden. "Reservar" desactivado hasta tener Stripe | Hecho | 8 API + 1 dominio + 4 e2e |
+| Fase 3B · Disponibilidad semanal del cuidador (hora de Miami, con cambios de horario de verano) y solicitudes de reserva: hijos o mascotas del hogar, fecha y horario, dirección; sin solapes (bloqueo en BD); dirección, indicaciones y datos de los hijos cifrados y visibles para el cuidador solo al aceptar; aceptar, rechazar, cancelar; precio **estimado**, sin cobro. **Cerradas en staging y producción** (`BOOKINGS_ENABLED`) hasta conectar Stripe | Hecho | 6 dominio + 11 API + 2 e2e |
+| Límite de peticiones por visitante real (IP reenviada por las apps y saltos de proxy de confianza configurables) | Hecho | 1 API |
 | Infraestructura AWS (Terraform) | Pendiente: necesita cuenta AWS y aprobación de costes | — |
 
 ## Valores provisionales (requieren aprobación de negocio)

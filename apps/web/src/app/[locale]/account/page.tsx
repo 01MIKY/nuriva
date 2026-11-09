@@ -124,6 +124,17 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
         </>
       )}
 
+      <nav className="quick-links" aria-label={t('web.nav.account')}>
+        {user.role !== 'admin' && (
+          <Link className="quick-link" href={`/${locale}/bookings`}>
+            <Icon name="calendar" /> {t(user.role === 'caregiver' ? 'web.bookings.titleCaregiver' : 'web.bookings.title')}
+          </Link>
+        )}
+        {user.role === 'caregiver' && (
+          <Link className="quick-link" href={`/${locale}/care/availability`}><Icon name="home" /> {t('web.availability.title')}</Link>
+        )}
+      </nav>
+
       <Card>
         <div className="household">
           <span className="household-icon" aria-hidden="true"><Icon name="shield" /></span>

@@ -5,7 +5,7 @@
 - Sesiones **en servidor**: el navegador recibe un token aleatorio de 256 bits; la base de datos solo guarda su SHA-256. Se pueden revocar (logout, "cerrar sesión en todos los dispositivos").
 - Cookie `httpOnly`, `SameSite=Lax`. En staging y producción: `Secure` y prefijo `__Host-`.
 - Mismo error y tiempo de respuesta para "email desconocido" y "contraseña incorrecta", para no revelar qué cuentas existen.
-- Límite de intentos: 10 por 15 minutos en registro y login; 300 por minuto en general.
+- Límite de intentos: 10 por 15 minutos en registro y login; 300 por minuto en general (`RATE_LIMIT_PER_MINUTE`). Cuentan **por visitante**: las apps reenvían la IP real (`X-Forwarded-For`) y la API solo se fía de los saltos configurados (`TRUSTED_PROXY_HOPS`; 2 en staging y producción: balanceador + proxy web). **Pendiente de infraestructura:** el balanceador debe sobrescribir `X-Forwarded-For` para que nadie pueda falsearlo.
 - **Verificación en dos pasos (TOTP, RFC 6238)**, compatible con Google Authenticator, 1Password, Authy y similares:
   - Alta con código QR. El secreto queda cifrado y pendiente hasta confirmarlo con un código válido.
   - 10 códigos de recuperación de un solo uso, mostrados una única vez. Solo se guarda su hash.

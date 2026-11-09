@@ -1,0 +1,175 @@
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { z } from 'zod';
+import { and, desc, eq, gt, inArray, lt, sql } from 'drizzle-orm';
+import { bookings, dependents, users, caregiverProfiles } from '@nuriva/db';
+import {
+  DIVISIONS, DomainError, MULTI_DAY_SERVICES, SLOT_HOLDING, assertTransition, contactRevealed, fitsAvailability, publicName,
+  quote, validateSchedule, zonedToUtc, type BookingStatus, type Division, type Service,
+} from '@nuriva/domain';
+import type { Deps } from '../lib/context.js';
+import { audit } from '../lib/audit.js';
+import { requireRole } from '../plugins/session.js';
+import { activeServices, bookableServices, isListed, loadCandidates, vettingFor } from './search.js';
+import { loadAvailability } from './caregiver.js';
+
+const BookingRequest = z.object({
+  caregiverId: z.string().uuid(),
+  division: z.enum(DIVISIONS),
+  service: z.string().max(40),
+  dependentIds: z.array(z.number().int().positive()).min(1).max(6),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  start: z.string().regex(/^([01]\d|2[0-3]):(00|30)$/),
+  end: z.string().regex(/^(([01]\d|2[0-3]):(00|30)|24:00)$/),
+  address: z.string().trim().min(10).max(200),
+  notes: z.string().trim().max(1000).default(''),
+}).strict();
+
+const IdParam = z.object({ id: z.coerce.number().int().positive() }).strict();
+const CancelBody = z.object({ reason: z.string().trim().max(300).optional() }).strict();
+
+interface DependentSnapshot { kind: 'child' | 'pet'; name: string; details: Record<string, unknown> }
+
+const nextDay = (date: string) => {
+  const d = new Date(`${date}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+};
+
+export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
+  const { db, cipher } = deps;
+  const enabled = async () => {
+    if (!deps.config.bookingsEnabled) throw new DomainError('bookings_unavailable', 'Bookings are not open yet', 403);
+  };
+
+  type Row = typeof bookings.$inferSelect;
+
+  /** Party-only access; anyone else gets the same 404 as a non-existent booking. */
+  async function loadFor(req: FastifyRequest, id: number): Promise<{ row: Row; role: 'client' | 'caregiver' }> {
+    const [row] = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
+    const u = req.user!;
+    if (!row || (row.clientId !== u.id && row.caregiverId !== u.id)) throw new DomainError('not_found', 'Not found', 404);
+    return { row, role: row.clientId === u.id ? 'client' : 'caregiver' };
+  }
+
+  /**
+   * What each party may see. Before acceptance the caregiver sees only what is needed to decide
+   * (ages / species, area-level location); names, health notes, address and notes are revealed on acceptance.
+   */
+  async function present(row: Row, role: 'client' | 'caregiver') {
+    const [[client], [cg]] = await Promise.all([
+      db.select({ name: users.name }).from(users).where(eq(users.id, row.clientId)),
+      db.select({ name: users.name, publicId: caregiverProfiles.publicId }).from(users)
+        .innerJoin(caregiverProfiles, eq(caregiverProfiles.userId, users.id)).where(eq(users.id, row.caregiverId)),
+    ]);
+    const revealed = role === 'client' || contactRevealed(row.status);
+    const snap = cipher.decryptJson<DependentSnapshot[]>(row.dependentsEnc);
+    return {
+      id: row.id, status: row.status, division: row.division, service: row.service,
+      startAt: row.startAt, endAt: row.endAt, createdAt: row.createdAt, respondedAt: row.respondedAt,
+      price: { hourlyRateCents: row.hourlyRateCents, subtotalCents: row.subtotalCents, clientFeeCents: row.clientFeeCents, totalCents: row.totalCents, estimate: true },
+      caregiver: { displayName: publicName(cg?.name ?? ''), publicId: cg?.publicId ?? null },
+      client: { firstName: (client?.name ?? '').split(' ')[0] ?? '' },
+      dependents: revealed
+        ? snap
+        : snap.map((d) => ({ kind: d.kind, details: d.kind === 'child' ? { ageYears: d.details.ageYears } : { species: d.details.species, ageYears: d.details.ageYears } })),
+      address: revealed ? cipher.decrypt(row.addressEnc) : null,
+      notes: revealed && row.notesEnc ? cipher.decrypt(row.notesEnc) : null,
+      detailsRevealed: revealed,
+      viewerRole: role,
+    };
+  }
+
+  app.post('/bookings', { preHandler: [requireRole('client'), enabled] }, async (req, reply) => {
+    const b = BookingRequest.parse(req.body);
+    const [row] = await loadCandidates(deps, eq(caregiverProfiles.publicId, b.caregiverId));
+    if (!row) throw new DomainError('not_bookable', 'Not bookable', 409);
+    const [active, vetting] = await Promise.all([activeServices(deps), vettingFor(deps, [row.userId])]);
+    if (!isListed(row, b.division, vetting.get(row.userId), active) || !bookableServices(row, b.division, active).includes(b.service)) {
+      throw new DomainError('not_bookable', 'Not bookable', 409);
+    }
+    const multiDay = MULTI_DAY_SERVICES.has(b.service as Service);
+    const startAt = zonedToUtc(b.date, b.start);
+    const endsNextDay = b.end === '24:00' || b.end <= b.start;
+    const endAt = zonedToUtc(endsNextDay ? nextDay(b.date) : b.date, b.end === '24:00' ? '00:00' : b.end);
+    const minutes = validateSchedule({ division: b.division, service: b.service, startAt, endAt });
+    if (!fitsAvailability(await loadAvailability(deps, row.userId), startAt, endAt, { multiDay })) {
+      throw new DomainError('outside_availability', 'Outside availability', 409);
+    }
+
+    const kind = b.division === 'kids' ? 'child' : 'pet';
+    const deps_ = await db.select().from(dependents).where(and(eq(dependents.ownerId, req.user!.id), inArray(dependents.id, b.dependentIds)));
+    if (deps_.length !== new Set(b.dependentIds).size || deps_.some((d) => d.kind !== kind)) {
+      throw new DomainError('invalid_dependents', 'Invalid selection', 400);
+    }
+    const snapshot: DependentSnapshot[] = deps_.map((d) => ({ kind: d.kind, name: cipher.decrypt(d.displayNameEnc), details: cipher.decryptJson(d.detailsEnc) }));
+    const q = quote(row.hourlyRateCents, minutes);
+
+    const created = await db.transaction(async (tx) => {
+      // Serialise requests for this caregiver, then re-check overlap inside the lock.
+      await tx.execute(sql`SELECT 1 FROM caregiver_profiles WHERE user_id = ${row.userId} FOR UPDATE`);
+      const clash = await tx.select({ id: bookings.id }).from(bookings).where(and(
+        eq(bookings.caregiverId, row.userId), inArray(bookings.status, [...SLOT_HOLDING]), lt(bookings.startAt, endAt), gt(bookings.endAt, startAt),
+      )).limit(1);
+      if (clash.length) throw new DomainError('slot_taken', 'Slot taken', 409);
+      const [ins] = await tx.insert(bookings).values({
+        clientId: req.user!.id, caregiverId: row.userId, division: b.division, service: b.service, startAt, endAt,
+        addressEnc: cipher.encrypt(b.address), notesEnc: b.notes ? cipher.encrypt(b.notes) : null,
+        dependentsEnc: cipher.encryptJson(snapshot), dependentCount: snapshot.length,
+        hourlyRateCents: q.hourlyRateCents, subtotalCents: q.subtotalCents, clientFeeCents: q.clientFeeCents, totalCents: q.totalCents,
+      }).returning();
+      await audit(tx, req, 'booking.request', `booking:${ins!.id}`, { division: b.division, service: b.service });
+      return ins!;
+    });
+    return reply.status(201).send({ booking: await present(created, 'client') });
+  });
+
+  app.get('/bookings', { preHandler: requireRole('client', 'caregiver') }, async (req) => {
+    const u = req.user!;
+    const rows = await db.select().from(bookings)
+      .where(u.role === 'client' ? eq(bookings.clientId, u.id) : eq(bookings.caregiverId, u.id))
+      .orderBy(desc(bookings.startAt)).limit(100);
+    const role = u.role === 'client' ? 'client' : 'caregiver';
+    return { bookings: await Promise.all(rows.map((r) => present(r, role))) };
+  });
+
+  app.get('/bookings/:id', { preHandler: requireRole('client', 'caregiver') }, async (req) => {
+    const { id } = IdParam.parse(req.params);
+    const { row, role } = await loadFor(req, id);
+    return { booking: await present(row, role) };
+  });
+
+  async function transition(req: FastifyRequest, to: BookingStatus) {
+    const { id } = IdParam.parse(req.params);
+    const { row, role } = await loadFor(req, id);
+    assertTransition(row.status, to, role);
+    if (to === 'accepted') {
+      // A caregiver can only accept while every approval is still valid and the service is still active.
+      const [cand] = await loadCandidates(deps, eq(users.id, row.caregiverId));
+      const [active, vetting] = await Promise.all([activeServices(deps), vettingFor(deps, [row.caregiverId])]);
+      if (!cand || !isListed(cand, row.division as Division, vetting.get(row.caregiverId), active)
+        || !bookableServices(cand, row.division as Division, active).includes(row.service)) {
+        throw new DomainError('not_bookable', 'Not bookable', 409);
+      }
+    }
+    const updated = await db.transaction(async (tx) => {
+      const [u] = await tx.update(bookings).set({
+        status: to,
+        ...(to === 'accepted' || to === 'declined' ? { respondedAt: new Date() } : {}),
+        ...(to === 'cancelled' ? { cancelledBy: req.user!.id } : {}),
+      }).where(and(eq(bookings.id, row.id), eq(bookings.status, row.status))).returning();
+      if (!u) throw new DomainError('stale', 'Booking changed, refresh', 409);
+      await audit(tx, req, `booking.${to}`, `booking:${row.id}`, { from: row.status });
+      return u;
+    });
+    return { booking: await present(updated, role) };
+  }
+
+  const cg = { preHandler: requireRole('caregiver') };
+  app.post('/bookings/:id/accept', cg, (req) => transition(req, 'accepted'));
+  app.post('/bookings/:id/decline', cg, (req) => transition(req, 'declined'));
+  app.post('/bookings/:id/cancel', { preHandler: requireRole('client', 'caregiver') }, (req) => {
+    CancelBody.parse(req.body ?? {});
+    return transition(req, 'cancelled');
+  });
+}
+

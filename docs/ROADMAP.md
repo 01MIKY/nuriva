@@ -48,8 +48,10 @@ Requiere: claves de prueba de Stripe Identity y Checkr.
 Requiere: claves de prueba de Stripe Connect (solo para reservar y pagar).
 - [x] Búsqueda Kids/Pets con filtros (servicio, idioma, orden). Pendiente: filtro por distancia (necesita geocodificación)
 - [x] Perfil público del cuidador con verificaciones reales
-- [ ] Presupuesto, reserva y pago autorizado (Stripe Connect test)
-- [ ] Aceptar o rechazar, cancelaciones según la política
+- [x] Disponibilidad del cuidador y solicitud de reserva con presupuesto estimado (sin cobro)
+- [ ] Pago autorizado al reservar (Stripe Connect test) — **bloqueado: falta una clave sk_test_ válida**
+- [x] Aceptar, rechazar y cancelar
+- [ ] Comisiones por cancelación tardía (dependen de los pagos)
 
 ## Fase 4: el servicio
 Requiere: claves de prueba de Twilio y Postmark.

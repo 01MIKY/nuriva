@@ -155,3 +155,49 @@ export const loginChallenges = pgTable('login_challenges', {
   usedAt: timestamp('used_at', { withTimezone: true }),
   createdAt: createdAt(),
 }, (t) => [uniqueIndex('login_challenges_token_uq').on(t.tokenHash)]);
+
+/** Weekly availability windows in market-local time (minutes from midnight; end may be 1440). */
+export const caregiverAvailability = pgTable('caregiver_availability', {
+  id: id(),
+  caregiverId: fk('caregiver_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  weekday: integer('weekday').notNull(),
+  startMinute: integer('start_minute').notNull(),
+  endMinute: integer('end_minute').notNull(),
+}, (t) => [
+  index('caregiver_availability_cg_idx').on(t.caregiverId),
+  check('weekday_range', sql`${t.weekday} BETWEEN 0 AND 6`),
+  check('minute_range', sql`${t.startMinute} >= 0 AND ${t.endMinute} <= 1440 AND ${t.endMinute} > ${t.startMinute}`),
+]);
+
+export const bookingStatus = pgEnum('booking_status', ['requested', 'accepted', 'declined', 'cancelled', 'in_progress', 'completed']);
+
+/**
+ * Booking requests. The address, notes and a snapshot of the children/pets are encrypted; the caregiver
+ * sees full details only after accepting. Prices are an estimate until payments are connected.
+ */
+export const bookings = pgTable('bookings', {
+  id: id(),
+  clientId: fk('client_id').notNull().references(() => users.id),
+  caregiverId: fk('caregiver_id').notNull().references(() => users.id),
+  division: division('division').notNull(),
+  service: text('service').notNull(),
+  startAt: timestamp('start_at', { withTimezone: true }).notNull(),
+  endAt: timestamp('end_at', { withTimezone: true }).notNull(),
+  status: bookingStatus('status').notNull().default('requested'),
+  addressEnc: text('address_enc').notNull(),
+  notesEnc: text('notes_enc'),
+  /** JSON snapshot of the dependents at request time (encrypted), so later household edits do not change it. */
+  dependentsEnc: text('dependents_enc').notNull(),
+  dependentCount: integer('dependent_count').notNull(),
+  hourlyRateCents: integer('hourly_rate_cents').notNull(),
+  subtotalCents: integer('subtotal_cents').notNull(),
+  clientFeeCents: integer('client_fee_cents').notNull(),
+  totalCents: integer('total_cents').notNull(),
+  respondedAt: timestamp('responded_at', { withTimezone: true }),
+  cancelledBy: fk('cancelled_by').references(() => users.id),
+  createdAt: createdAt(),
+}, (t) => [
+  index('bookings_caregiver_time_idx').on(t.caregiverId, t.startAt),
+  index('bookings_client_idx').on(t.clientId, t.startAt),
+  check('booking_time_order', sql`${t.endAt} > ${t.startAt}`),
+]);

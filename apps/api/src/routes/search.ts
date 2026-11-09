@@ -7,6 +7,7 @@ import {
   type Division, type VettingState,
 } from '@nuriva/domain';
 import type { Deps } from '../lib/context.js';
+import { loadAvailability } from './caregiver.js';
 
 const SearchQuery = z.object({
   division: z.enum(DIVISIONS),
@@ -18,9 +19,9 @@ const SearchQuery = z.object({
 
 const PublicId = z.object({ id: z.string().uuid() }).strict();
 
-type Row = Awaited<ReturnType<typeof loadCandidates>>[number];
+export type Row = Awaited<ReturnType<typeof loadCandidates>>[number];
 
-async function loadCandidates(deps: Deps, where?: ReturnType<typeof eq>) {
+export async function loadCandidates(deps: Deps, where?: ReturnType<typeof eq>) {
   return deps.db.select({
     userId: users.id, name: users.name, createdAt: users.createdAt, status: users.status,
     publicId: caregiverProfiles.publicId, divisions: caregiverProfiles.divisions, headline: caregiverProfiles.headline,
@@ -31,7 +32,7 @@ async function loadCandidates(deps: Deps, where?: ReturnType<typeof eq>) {
 }
 
 /** Current compliance state per "division.service" (latest register row wins). */
-async function activeServices(deps: Deps): Promise<Set<string>> {
+export async function activeServices(deps: Deps): Promise<Set<string>> {
   const rows = await deps.db.select().from(serviceActivations).orderBy(desc(serviceActivations.createdAt), desc(serviceActivations.id));
   const seen = new Set<string>();
   const active = new Set<string>();
@@ -44,7 +45,7 @@ async function activeServices(deps: Deps): Promise<Set<string>> {
   return active;
 }
 
-async function vettingFor(deps: Deps, ids: number[]): Promise<Map<number, VettingState>> {
+export async function vettingFor(deps: Deps, ids: number[]): Promise<Map<number, VettingState>> {
   const out = new Map<number, VettingState>();
   if (!ids.length) return out;
   const rows = await deps.db.select().from(vettingRecords).where(inArray(vettingRecords.caregiverId, ids));
@@ -57,11 +58,11 @@ async function vettingFor(deps: Deps, ids: number[]): Promise<Map<number, Vettin
 }
 
 /** Services this caregiver can actually be booked for in a division: offered by them AND active in the register. */
-function bookableServices(row: Row, division: Division, active: Set<string>): string[] {
+export function bookableServices(row: Row, division: Division, active: Set<string>): string[] {
   return row.services.filter((s) => (SERVICES[division] as readonly string[]).includes(s) && active.has(`${division}.${s}`));
 }
 
-function isListed(row: Row, division: Division, vetting: VettingState | undefined, active: Set<string>) {
+export function isListed(row: Row, division: Division, vetting: VettingState | undefined, active: Set<string>) {
   if (!vetting || profileGaps(row).length > 0) return false;
   const svc = bookableServices(row, division, active);
   return bookability({ accountActive: row.status === 'active', vetting, caregiverDivisions: row.divisions, division, serviceActive: svc.length > 0 }).ok;
@@ -113,6 +114,17 @@ export async function searchRoutes(app: FastifyInstance, deps: Deps) {
         hourlyRateCents: row.hourlyRateCents, yearsExperience: row.yearsExperience, languages: row.languages,
         divisions: byDivision, verifiedSteps: VETTING_STEPS, memberSince: row.createdAt,
       },
+      bookingsEnabled: deps.config.bookingsEnabled,
     };
+  });
+
+  /** Weekly hours of a listed caregiver (Miami time), so families pick a time that can be accepted. */
+  app.get('/caregivers/:id/availability', async (req) => {
+    const { id } = PublicId.parse(req.params);
+    const [rows, active] = await Promise.all([loadCandidates(deps, eq(caregiverProfiles.publicId, id)), activeServices(deps)]);
+    const row = rows[0];
+    const vetting = row ? (await vettingFor(deps, [row.userId])).get(row.userId) : undefined;
+    if (!row || !row.divisions.some((d) => isListed(row, d, vetting, active))) throw new DomainError('not_found', 'Not found', 404);
+    return { timeZone: 'America/New_York', windows: await loadAvailability(deps, row.userId) };
   });
 }

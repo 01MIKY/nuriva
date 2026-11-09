@@ -36,6 +36,13 @@
       "when": 1794242114540,
       "tag": "0004_caregiver_public_id",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794243307041,
+      "tag": "0005_availability_and_bookings",
+      "breakpoints": true
     }
   ]
 }
