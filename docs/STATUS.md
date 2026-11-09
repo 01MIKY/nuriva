@@ -40,7 +40,8 @@
 | Límite de peticiones por visitante real (IP reenviada por las apps y saltos de proxy de confianza configurables) | Hecho | 1 API |
 | Pagos 1 · Cuentas de cobro del cuidador con Stripe Connect (Accounts v2, panel Express, Stripe asume las pérdidas; ADR 0003): alta alojada por Stripe, estado de cobros, pantalla "Cobros". Con los pagos activados, solo aparece en la búsqueda quien puede cobrar | Hecho | 6 API + 3 config + 1 e2e + 1 prueba real en Stripe (modo de prueba) |
 | Pagos 2 · Cobro de reservas: tras aceptar, la familia paga en Stripe Checkout (cargo directo en la cuenta del cuidador, `application_fee` = tarifa 10 % + comisión 15 %); al volver, NURIVA comprueba la sesión con Stripe (importe y sesión guardada); reembolsos al cancelar según la política (todo con 24 h o más de antelación o si cancela el cuidador; 50 % del cuidado retenido si la familia cancela tarde), con bloqueo de la reserva y clave de idempotencia | Hecho | 4 dominio + 9 API |
-| **Pendiente en pagos:** webhooks de Stripe (`account.updated`, `checkout.session.completed`, reembolsos) para no depender de que el usuario vuelva a la app; probar el pago en navegador contra Stripe real (no automatizable desde este entorno); decidir quién absorbe la comisión de Stripe (ADR 0003) | Pendiente | — |
+| Pagos 3 · Webhooks de Stripe: firma verificada con la librería oficial, idempotencia por ID de evento, re-consulta a Stripe antes de actuar, exentos de la comprobación de origen | Hecho (falta registrar el destino en Stripe cuando haya URL pública) | 4 API + 1 modo estricto |
+| **Pendiente en pagos:** probar el pago completo con tarjeta de prueba en navegador contra Stripe real; decidir quién absorbe la comisión de Stripe (ADR 0003); aceptar varios secretos de webhook si hiciera falta | Pendiente | — |
 | Infraestructura AWS (Terraform) | Pendiente: necesita cuenta AWS y aprobación de costes | — |
 
 ## Valores provisionales (requieren aprobación de negocio)

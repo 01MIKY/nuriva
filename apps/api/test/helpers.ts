@@ -11,6 +11,8 @@ import { buildApp } from '../src/app.js';
 export const TEST_DB = process.env.TEST_DATABASE_URL ?? 'postgres://nuriva_dev:nuriva_dev_local_only@localhost:5432/nuriva_test';
 
 /** `paymentsEnabled` defaults to false so suites that are not about payments do not need Stripe onboarding. */
+export const TEST_WEBHOOK_SECRET = 'whsec_test_nuriva_secret';
+
 export async function setup(opts: { paymentsEnabled?: boolean } = {}) {
   try {
     await runMigrations(TEST_DB);
@@ -25,11 +27,12 @@ export async function setup(opts: { paymentsEnabled?: boolean } = {}) {
     NURIVA_DATA_KEYS: `t1:${randomBytes(32).toString('base64')}`,
     AUTH_RATE_LIMIT: '1000',
     PAYMENTS_ENABLED: opts.paymentsEnabled ? 'true' : 'false',
+    STRIPE_WEBHOOK_SECRET: TEST_WEBHOOK_SECRET,
   });
   const { db, pool } = createDb(TEST_DB);
   // TRUNCATE bypasses the append-only row triggers; acceptable only in the test database.
   await db.execute(sql`TRUNCATE users, sessions, staff_role_assignments, caregiver_profiles, vetting_records,
-    vetting_events, service_activations, dependents, audit_log RESTART IDENTITY CASCADE`);
+    vetting_events, service_activations, dependents, audit_log, stripe_events RESTART IDENTITY CASCADE`);
   const cipher = createFieldCipher(parseKeyring(config.NURIVA_DATA_KEYS));
   const fakePayments = createFakePaymentsProvider();
   const app = await buildApp({ config, db, cipher, payments: fakePayments.provider });

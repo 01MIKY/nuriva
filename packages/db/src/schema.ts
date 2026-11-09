@@ -216,3 +216,10 @@ export const bookings = pgTable('bookings', {
   check('payment_status_values', sql`${t.paymentStatus} IN ('none','pending','paid','refunded','partially_refunded')`),
   check('refund_not_above_paid', sql`${t.refundedCents} <= ${t.paidCents}`),
 ]);
+
+/** Processed Stripe webhook event ids, so a redelivered event is never applied twice. */
+export const stripeEvents = pgTable('stripe_events', {
+  id: text('id').primaryKey(),
+  type: text('type').notNull(),
+  receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
+});

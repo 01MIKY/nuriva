@@ -27,6 +27,8 @@ const Env = z.object({
   PAYMENTS_PROVIDER: z.enum(['stripe', 'fake']).optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_API_VERSION_V2: z.string().default('2026-10-28.preview'),
+  /** Signing secret of the Stripe event destination (whsec_…). Required in staging/production when payments are on. */
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
   /** Charging for bookings. Off by default in staging/production until approved. */
   PAYMENTS_ENABLED: z.enum(['true', 'false']).optional(),
   /** Public URL of the web app, used for Stripe return URLs. */
@@ -55,5 +57,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (paymentsProvider === 'stripe' && !c.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY is required (use a sk_test_ key outside production). See .env.example');
   if (c.NURIVA_ENV !== 'production' && c.STRIPE_SECRET_KEY?.startsWith('sk_live_')) throw new Error('Live Stripe keys are only allowed in production');
   const paymentsEnabled = c.PAYMENTS_ENABLED ? c.PAYMENTS_ENABLED === 'true' : !strict;
+  if (strict && paymentsEnabled && !c.STRIPE_WEBHOOK_SECRET) throw new Error('STRIPE_WEBHOOK_SECRET is required when payments are enabled in ' + c.NURIVA_ENV);
   return { ...c, strict, bookingsEnabled, trustedProxyHops, paymentsProvider, paymentsEnabled, origins: c.APP_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean) };
 }

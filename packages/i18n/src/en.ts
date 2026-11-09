@@ -69,6 +69,8 @@ export const en = {
     payouts_not_ready: 'This caregiver cannot receive payments yet. Try again later.',
     payment_mismatch: 'We could not match this payment. Please contact support.',
     payment_not_completed: 'The payment was not completed. You can try again.',
+    webhooks_not_configured: 'Payment notifications are not configured.',
+    invalid_signature: 'Invalid request signature.',
     bookings_unavailable: 'Booking is not open yet.',
     outside_availability: 'The caregiver is not available at that time. Choose another time.',
     slot_taken: 'That time was just taken. Choose another time.',

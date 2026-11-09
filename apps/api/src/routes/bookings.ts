@@ -229,19 +229,35 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
     const { sessionId } = ConfirmBody.parse(req.body);
     const { id } = IdParam.parse(req.params);
     const { row, role } = await loadFor(req, id);
-    if (row.paymentStatus === 'paid') return { booking: await present(row, role) }; // idempotent
-    if (!row.checkoutSessionId || row.checkoutSessionId !== sessionId) throw new DomainError('payment_mismatch', 'Unknown payment session', 409);
-    const [p] = await db.select({ acct: caregiverProfiles.stripeAccountId }).from(caregiverProfiles).where(eq(caregiverProfiles.userId, row.caregiverId));
-    let state;
-    try { state = await deps.payments.getCheckout(p!.acct!, sessionId); } catch (e) { return providerError(req, e); }
-    if (!state.paid || !state.paymentIntentId) throw new DomainError('payment_not_completed', 'Payment not completed', 409);
-    if (state.amountCents !== row.totalCents) throw new DomainError('payment_mismatch', 'Amount mismatch', 409);
-    const updated = await db.transaction(async (tx) => {
-      const [u] = await tx.update(bookings).set({ paymentStatus: 'paid', paymentIntentId: state.paymentIntentId, paidCents: state.amountCents, paidAt: new Date() })
-        .where(and(eq(bookings.id, row.id), eq(bookings.checkoutSessionId, sessionId))).returning();
-      await audit(tx, req, 'booking.paid', `booking:${row.id}`, { amountCents: state.amountCents });
-      return u!;
-    });
-    return { booking: await present(updated, role) };
+    try {
+      const updated = await markBookingPaid(deps, row.id, sessionId, req);
+      return { booking: await present(updated, role) };
+    } catch (e) { return providerError(req, e); }
   });
 }
+
+/**
+ * Marks a booking paid after asking Stripe for the stored Checkout session. Shared by the family's return
+ * from Checkout and by the Stripe webhook, so both apply exactly the same checks. Idempotent.
+ */
+export async function markBookingPaid(deps: Deps, bookingId: number, sessionId: string, req: FastifyRequest | null) {
+  const [row] = await deps.db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1);
+  if (!row) throw new DomainError('not_found', 'Not found', 404);
+  if (row.paymentStatus !== 'none' && row.paymentStatus !== 'pending') return row; // already paid (or refunded)
+  if (!row.checkoutSessionId || row.checkoutSessionId !== sessionId) throw new DomainError('payment_mismatch', 'Unknown payment session', 409);
+  const [p] = await deps.db.select({ acct: caregiverProfiles.stripeAccountId }).from(caregiverProfiles).where(eq(caregiverProfiles.userId, row.caregiverId));
+  const state = await deps.payments.getCheckout(p!.acct!, sessionId);
+  if (!state.paid || !state.paymentIntentId) throw new DomainError('payment_not_completed', 'Payment not completed', 409);
+  if (state.amountCents !== row.totalCents) throw new DomainError('payment_mismatch', 'Amount mismatch', 409);
+  return deps.db.transaction(async (tx) => {
+    const [u] = await tx.update(bookings).set({ paymentStatus: 'paid', paymentIntentId: state.paymentIntentId, paidCents: state.amountCents, paidAt: new Date() })
+      .where(and(eq(bookings.id, row.id), eq(bookings.checkoutSessionId, sessionId), inArray(bookings.paymentStatus, ['none', 'pending']))).returning();
+    if (!u) {
+      const [cur] = await tx.select().from(bookings).where(eq(bookings.id, row.id));
+      return cur!; // a concurrent confirmation won the race
+    }
+    await audit(tx, req, 'booking.paid', `booking:${row.id}`, { amountCents: state.amountCents, via: req ? 'return' : 'webhook' }, req?.user?.id ?? null);
+    return u;
+  });
+}
+

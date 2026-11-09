@@ -44,7 +44,9 @@ export function registerSession(app: FastifyInstance, deps: Deps) {
     // cookies are SameSite=Lax, and in strict envs state-changing requests must come from an allowed origin.
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
       const origin = req.headers.origin;
-      if (deps.config.strict && (!origin || !deps.config.origins.includes(origin))) {
+      // Stripe webhooks carry no Origin; they are authenticated by their signature instead.
+      const signedWebhook = req.url.split('?')[0] === '/v1/webhooks/stripe';
+      if (deps.config.strict && !signedWebhook && (!origin || !deps.config.origins.includes(origin))) {
         throw new DomainError('forbidden', 'Origin not allowed', 403);
       }
     }

@@ -71,6 +71,8 @@ export const es: Catalog = {
     payouts_not_ready: 'Este cuidador todavía no puede recibir pagos. Inténtalo más tarde.',
     payment_mismatch: 'No pudimos verificar este pago. Contacta con soporte.',
     payment_not_completed: 'El pago no se completó. Puedes intentarlo de nuevo.',
+    webhooks_not_configured: 'Las notificaciones de pago no están configuradas.',
+    invalid_signature: 'Firma de la petición no válida.',
     bookings_unavailable: 'Las reservas todavía no están abiertas.',
     outside_availability: 'El cuidador no está disponible a esa hora. Elige otro horario.',
     slot_taken: 'Ese horario se acaba de ocupar. Elige otro.',

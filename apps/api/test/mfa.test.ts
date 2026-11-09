@@ -127,7 +127,7 @@ describe('MFA enforcement in staging/production', () => {
       NURIVA_DATA_KEYS: `s1:${randomBytes(32).toString('base64')}`, APP_ORIGINS: 'https://app.nuriva.test', origins: ['https://app.nuriva.test'],
       TERMS_VERSION: 't', AUTH_RATE_LIMIT: 1000, SESSION_TTL_HOURS: 1,
       bookingsEnabled: false, trustedProxyHops: 2, RATE_LIMIT_PER_MINUTE: 1000,
-      paymentsProvider: 'fake', paymentsEnabled: false, STRIPE_API_VERSION_V2: 'x', WEB_ORIGIN: 'https://app.nuriva.test',
+      paymentsProvider: 'fake', paymentsEnabled: false, STRIPE_API_VERSION_V2: 'x', WEB_ORIGIN: 'https://app.nuriva.test', STRIPE_WEBHOOK_SECRET: 'whsec_strict',
     } as Config;
     const { db, pool } = createDb(TEST_DB);
     const app = await buildApp({ config, db, cipher: createFieldCipher(parseKeyring(config.NURIVA_DATA_KEYS)), payments: createFakePaymentsProvider().provider });
@@ -154,6 +154,10 @@ describe('MFA enforcement in staging/production', () => {
       // Cannot turn it off where it is mandatory
       const off = await app.inject({ method: 'POST', url: '/v1/auth/mfa/disable', headers: { cookie, ...origin }, payload: { password: 'correct-horse-battery-1', code: '123456' } });
       expect(off.json().error).toBe('mfa_required_for_role');
+      // Stripe webhooks have no Origin header; in strict mode they reach signature verification instead of a 403
+      const hook = await app.inject({ method: 'POST', url: '/v1/webhooks/stripe', headers: { 'content-type': 'application/json', 'stripe-signature': 't=1,v1=bad' }, payload: '{"id":"evt_x","object":"event"}' });
+      expect(hook.statusCode).toBe(400);
+      expect(hook.json().error).toBe('invalid_signature');
       // Requests from other origins are refused in strict environments
       const evil = await app.inject({ method: 'POST', url: '/v1/auth/logout', headers: { cookie, origin: 'https://evil.example' }, payload: {} });
       expect(evil.statusCode).toBe(403);
