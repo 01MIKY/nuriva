@@ -1,0 +1,2 @@
+ALTER TABLE "caregiver_profiles" ADD COLUMN "public_id" uuid DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "caregiver_profiles_public_id_uq" ON "caregiver_profiles" USING btree ("public_id");

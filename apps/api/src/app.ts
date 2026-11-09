@@ -11,6 +11,7 @@ import { caregiverRoutes } from './routes/caregiver.js';
 import { adminRoutes } from './routes/admin.js';
 import { householdRoutes } from './routes/household.js';
 import { mfaRoutes } from './routes/mfa.js';
+import { searchRoutes } from './routes/search.js';
 
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const app = Fastify({
@@ -43,6 +44,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
     await adminRoutes(api, deps);
     await householdRoutes(api, deps);
     await mfaRoutes(api, deps);
+    await searchRoutes(api, deps);
   }, { prefix: '/v1' });
 
   return app;

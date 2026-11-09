@@ -96,14 +96,13 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
           <section className="n-stack" style={{ ['--gap' as string]: '12px' }}>
             <div className="approval-top">
               <h2 className="card-title">{t('web.home.need')}</h2>
-              <Badge tone="pending">{t('web.account.soonBadge')}</Badge>
             </div>
             <div className="n-tiles">
-              <Link href={`/${locale}#kids`} className="n-tile n-tile-kids">
+              <Link href={`/${locale}/search?division=kids`} className="n-tile n-tile-kids">
                 <ArtKids />
                 <span><span className="n-tile-title">{t('web.home.tileKids')}</span><span className="n-tile-sub">{t('web.home.tileKidsSub')}</span></span>
               </Link>
-              <Link href={`/${locale}#pets`} className="n-tile n-tile-pets">
+              <Link href={`/${locale}/search?division=pets`} className="n-tile n-tile-pets">
                 <ArtPets />
                 <span><span className="n-tile-title">{t('web.home.tilePets')}</span><span className="n-tile-sub">{t('web.home.tilePetsSub')}</span></span>
               </Link>

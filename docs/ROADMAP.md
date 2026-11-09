@@ -45,9 +45,9 @@ Requiere: claves de prueba de Stripe Identity y Checkr.
 - [ ] Revisión legal del flujo
 
 ## Fase 3: búsqueda y reservas
-Requiere: claves de prueba de Stripe Connect.
-- [ ] Búsqueda Kids/Pets con filtros y distancia
-- [ ] Perfil público del cuidador con verificaciones reales
+Requiere: claves de prueba de Stripe Connect (solo para reservar y pagar).
+- [x] Búsqueda Kids/Pets con filtros (servicio, idioma, orden). Pendiente: filtro por distancia (necesita geocodificación)
+- [x] Perfil público del cuidador con verificaciones reales
 - [ ] Presupuesto, reserva y pago autorizado (Stripe Connect test)
 - [ ] Aceptar o rechazar, cancelaciones según la política
 

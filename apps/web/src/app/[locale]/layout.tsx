@@ -45,8 +45,8 @@ export default async function LocaleLayout({ children, params }: { children: Rea
           <div className="n-container site-header-inner">
             <Link href={`/${locale}`} aria-label="NURIVA"><Logo size={30} /></Link>
             <nav className="site-nav" aria-label="Main">
-              <Link href={`/${locale}#kids`} className="hide-sm">{t('web.nav.kids')}</Link>
-              <Link href={`/${locale}#pets`} className="hide-sm">{t('web.nav.pets')}</Link>
+              <Link href={`/${locale}/search?division=kids`} className="hide-sm">{t('web.nav.kids')}</Link>
+              <Link href={`/${locale}/search?division=pets`} className="hide-sm">{t('web.nav.pets')}</Link>
               <Link href={`/${locale}#how`} className="hide-sm">{t('web.nav.howItWorks')}</Link>
               <LanguageSwitch target={otherLocale(locale)} label={t('web.nav.language')} />
               {user

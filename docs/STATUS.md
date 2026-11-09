@@ -35,6 +35,7 @@
 | Bloque 3 · Perfil y solicitud del cuidador (divisiones, servicios, tarifa, idiomas, titular, bio, código postal), con lo que falta para completarla; no puede tocar su aprobación | Hecho (en `apps/web`, ver ADR 0002) | 6 API + 2 e2e |
 | Bloque 4 · `apps/admin`: acceso solo para el equipo, lista de cuidadores con filtros, ficha con perfil, pasos de selección con evidencia obligatoria (antecedentes solo Trust & Safety), historial restringido y auditado, registro de cumplimiento (solo superadmin), auditoría; menú según permisos | Hecho | 7 API + 2 e2e |
 | Herramienta `create-staff` (única forma de crear administradores; contraseña temporal de un solo uso) | Hecho | 2 |
+| Fase 3A · Búsqueda pública y perfiles: solo cuidadores con los 6 pasos aprobados, perfil completo, cuenta activa y algún servicio activado en el registro de cumplimiento. Nombre público "Nombre + inicial", ID público aleatorio, sin correo ni código postal. Filtros por servicio, idioma y orden. "Reservar" desactivado hasta tener Stripe | Hecho | 8 API + 1 dominio + 4 e2e |
 | Infraestructura AWS (Terraform) | Pendiente: necesita cuenta AWS y aprobación de costes | — |
 
 ## Valores provisionales (requieren aprobación de negocio)

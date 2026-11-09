@@ -94,3 +94,13 @@ describe('staff permissions', () => {
     expect(hasPermission(['operations', 'trust_safety', 'finance', 'support'], 'compliance.activate_service')).toBe(false);
   });
 });
+
+describe('public names', async () => {
+  const { publicName, initialsOf } = await import('./index.js');
+  it('uses first name + first surname initial', () => {
+    expect(publicName('Valentina Ríos Gómez')).toBe('Valentina R.');
+    expect(publicName('Andrés Pérez')).toBe('Andrés P.');
+    expect(publicName('  Cher  ')).toBe('Cher');
+    expect(initialsOf('valentina ríos')).toBe('VR');
+  });
+});

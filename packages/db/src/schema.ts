@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
-  pgTable, pgEnum, bigserial, bigint, text, timestamp, boolean, integer, jsonb, uniqueIndex, index, primaryKey, check,
+  pgTable, pgEnum, bigserial, bigint, text, timestamp, boolean, integer, jsonb, uniqueIndex, index, primaryKey, check, uuid,
 } from 'drizzle-orm/pg-core';
 
 const id = () => bigserial('id', { mode: 'number' }).primaryKey();
@@ -59,6 +59,8 @@ export const sessions = pgTable('sessions', {
 
 export const caregiverProfiles = pgTable('caregiver_profiles', {
   userId: fk('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  /** Opaque id used in public URLs, so internal ids are never exposed or enumerable. */
+  publicId: uuid('public_id').notNull().defaultRandom(),
   divisions: division('divisions').array().notNull(),
   headline: text('headline').notNull().default(''),
   bio: text('bio').notNull().default(''),
@@ -69,6 +71,7 @@ export const caregiverProfiles = pgTable('caregiver_profiles', {
   zip: text('zip'),
   createdAt: createdAt(),
 }, (t) => [
+  uniqueIndex('caregiver_profiles_public_id_uq').on(t.publicId),
   check('rate_range', sql`${t.hourlyRateCents} BETWEEN 1500 AND 20000`),
   check('divisions_nonempty', sql`cardinality(${t.divisions}) > 0`),
 ]);

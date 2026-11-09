@@ -9,8 +9,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const t = translator(locale);
   const me = await apiGet<Me>('/v1/auth/me', locale);
   const signedIn = !!me.body?.user;
-  // Search is not built yet (Phase 3): tiles lead to the division details below.
-  const tileHref = (d: 'kids' | 'pets') => `/${locale}#${d}`;
+  const tileHref = (d: 'kids' | 'pets') => `/${locale}/search?division=${d}`;
 
   const steps: Array<{ icon: IconName; title: string; body: string }> = [
     { icon: 'heart', title: t('web.home.step1Title'), body: t('web.home.step1Body') },

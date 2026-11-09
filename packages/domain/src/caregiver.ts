@@ -47,3 +47,18 @@ export function profileGaps(p: CaregiverProfileView): Array<'headline' | 'bio' |
   if (!p.zip) gaps.push('zip');
   return gaps;
 }
+
+/**
+ * Public display name: first word + initial of the second word ("Valentina Ríos Gómez" → "Valentina R.").
+ * Uses the first surname, as is customary for Spanish names. Full names are never public.
+ * Known limitation: compound given names ("Mary Ann Smith" → "Mary A."); a caregiver-chosen display name is a follow-up.
+ */
+export function publicName(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/);
+  const first = parts[0] ?? '';
+  const second = parts[1];
+  return second ? `${first} ${second[0]!.toUpperCase()}.` : first;
+}
+
+export const initialsOf = (fullName: string) =>
+  fullName.trim().split(/\s+/).filter(Boolean).map((p) => p[0]!.toUpperCase()).slice(0, 2).join('');
