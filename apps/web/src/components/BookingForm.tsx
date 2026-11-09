@@ -1,8 +1,8 @@
 'use client';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { t, formatMoney, type Locale, type MessageKey } from '@nuriva/i18n';
-import { quote } from '@nuriva/domain';
+import { quote, MULTI_DAY_SERVICES, type Service } from '@nuriva/domain';
 import { Alert, Button, Card, Field } from '@nuriva/ui';
 import { apiSend } from '@/lib/client-api';
 import { HALF_HOURS, type BookingView, type Window } from '@/lib/bookings';
@@ -30,6 +30,8 @@ export function BookingForm({ locale, caregiver, household, windows, minDate }: 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const errorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (formError) errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, [formError]);
 
   const kind = division === 'kids' ? 'child' : 'pet';
   const options = household.filter((d) => d.kind === kind);
@@ -50,6 +52,14 @@ export function BookingForm({ locale, caregiver, household, windows, minDate }: 
     if (!selected.length) e.who = tr('web.book.chooseOne');
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) e.date = tr('web.book.chooseDate');
     if (address.length < 10) e.address = tr('web.book.invalidAddress');
+    // Same check the API makes, done early so the family sees it next to the date (single-day services).
+    if (!e.date && !MULTI_DAY_SERVICES.has(service as Service)) {
+      const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
+      const s0 = minutesOf(start);
+      const e0 = minutesOf(end) <= s0 ? null : minutesOf(end);
+      const fits = e0 !== null && windows.some((w) => w.weekday === weekday && s0 >= minutesOf(w.start) && e0 <= minutesOf(w.end));
+      if (!fits) e.date = tr('errors.outside_availability');
+    }
     setErrors(e);
     if (Object.keys(e).length) return;
     setBusy(true);
@@ -67,7 +77,7 @@ export function BookingForm({ locale, caregiver, household, windows, minDate }: 
   return (
     <div className="book-grid">
       <form className="n-stack" onSubmit={submit} noValidate aria-label={tr('web.book.title', { name: caregiver.displayName })} style={{ ['--gap' as string]: '18px' }}>
-        {formError && <Alert tone="error">{formError}</Alert>}
+        <div ref={errorRef}>{formError && <Alert tone="error">{formError}</Alert>}</div>
 
         {caregiver.divisions.length > 1 && (
           <div className="n-field">

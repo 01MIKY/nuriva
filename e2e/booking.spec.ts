@@ -60,6 +60,11 @@ test('a family requests a booking, the caregiver accepts and then the family can
   await expect(form.getByText('Elige al menos uno.')).toBeVisible();
   await form.getByRole('button', { name: 'Sofía' }).click();
   await form.getByLabel('Fecha').fill(dayPlus(5));
+  await form.getByLabel('Hora de inicio').selectOption('06:00'); // before the caregiver's hours
+  await form.getByLabel('Hora de fin').selectOption('09:00');
+  await form.getByLabel('Dirección').fill('1200 Brickell Bay Dr, Apt 14B, Miami');
+  await form.getByRole('button', { name: 'Enviar solicitud' }).click();
+  await expect(form.getByText('El cuidador no está disponible a esa hora. Elige otro horario.')).toBeVisible();
   await form.getByLabel('Hora de inicio').selectOption('18:00');
   await form.getByLabel('Hora de fin').selectOption('22:00');
   await expect(fam.getByText('$114.40')).toBeVisible(); // 4 h × $26 + 10 % fee
