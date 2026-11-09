@@ -130,7 +130,7 @@ describe('MFA enforcement in staging/production', () => {
       paymentsProvider: 'fake', paymentsEnabled: false, STRIPE_API_VERSION_V2: 'x', WEB_ORIGIN: 'https://app.nuriva.test', STRIPE_WEBHOOK_SECRET: 'whsec_strict',
     } as Config;
     const { db, pool } = createDb(TEST_DB);
-    const app = await buildApp({ config, db, cipher: createFieldCipher(parseKeyring(config.NURIVA_DATA_KEYS)), payments: createFakePaymentsProvider().provider });
+    const app = await buildApp({ config, db, cipher: createFieldCipher(parseKeyring(config.NURIVA_DATA_KEYS)), ...(() => { const f = createFakePaymentsProvider(); return { payments: f.provider, identity: f.identity }; })() });
     const origin = { origin: 'https://app.nuriva.test' };
     try {
       const reg = await app.inject({ method: 'POST', url: '/v1/auth/register', headers: origin, payload: {

@@ -74,7 +74,9 @@ export async function adminRoutes(app: FastifyInstance, deps: Deps) {
     const caregiver = await getCaregiver(id);
     const profile = await loadProfile(deps, id);
     const state = await loadVetting(deps, id);
-    return { caregiver, profile, gaps: profileGaps(profile), steps: VETTING_STEPS.map((x) => ({ step: x, status: state[x] })) };
+    const [idv] = await db.select({ status: caregiverProfiles.identityStatus, sessionId: caregiverProfiles.identitySessionId, errorCode: caregiverProfiles.identityErrorCode, checkedAt: caregiverProfiles.identityCheckedAt })
+      .from(caregiverProfiles).where(eq(caregiverProfiles.userId, id));
+    return { caregiver, profile, gaps: profileGaps(profile), steps: VETTING_STEPS.map((x) => ({ step: x, status: state[x] })), identityCheck: idv ?? null };
   });
 
   const AuditQuery = z.object({ before: z.coerce.number().int().positive().optional() }).strict();

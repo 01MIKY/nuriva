@@ -30,7 +30,7 @@ describe('translation parity (no untranslated screens)', () => {
     for (const s of VETTING_STEPS) expect(en[`vetting.steps.${s}`], s).toBeDefined();
   });
   it('flags Spanish strings identical to English for review (brand names excepted)', () => {
-    const allowed = new Set(['brand.name', 'divisions.kids', 'divisions.pets', 'web.nav.kids', 'web.nav.pets', 'web.home.kidsTitle', 'web.home.petsTitle', 'admin.title', 'admin.roles.superadmin', 'admin.roles.trust_safety']);
+    const allowed = new Set(['brand.name', 'divisions.kids', 'divisions.pets', 'web.nav.kids', 'web.nav.pets', 'web.home.kidsTitle', 'web.home.petsTitle', 'admin.title', 'admin.roles.superadmin', 'admin.roles.trust_safety', 'web.identity.adminTitle']);
     const same = Object.keys(en).filter((k) => !allowed.has(k) && en[k] === es[k]);
     expect(same).toEqual([]);
   });

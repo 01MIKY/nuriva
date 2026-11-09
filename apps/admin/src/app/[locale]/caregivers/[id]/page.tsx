@@ -14,6 +14,7 @@ interface Detail {
   profile: CaregiverProfileView;
   gaps: string[];
   steps: Array<{ step: VettingStep; status: StepStatus }>;
+  identityCheck: { status: string; sessionId: string | null } | null;
 }
 
 export const metadata: Metadata = { robots: { index: false } };
@@ -26,7 +27,7 @@ export default async function CaregiverDetail({ params }: { params: Promise<{ lo
   if (!/^\d+$/.test(id)) notFound();
   const res = await apiGet<Detail>(`/v1/admin/caregivers/${id}`, locale);
   if (!res.body) notFound();
-  const { caregiver, profile, gaps, steps } = res.body;
+  const { caregiver, profile, gaps, steps, identityCheck } = res.body;
   const p = profile;
 
   return (
@@ -60,6 +61,7 @@ export default async function CaregiverDetail({ params }: { params: Promise<{ lo
             initialSteps={steps}
             canWrite={can(staff, 'caregivers.vetting.write')}
             canBackground={can(staff, 'screening.read')}
+            identityCheck={identityCheck}
           />
           {can(staff, 'screening.read') && <ScreeningHistory locale={locale} caregiverId={caregiver.id} />}
         </div>

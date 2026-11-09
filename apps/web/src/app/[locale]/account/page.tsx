@@ -134,6 +134,9 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
           <Link className="quick-link" href={`/${locale}/care/availability`}><Icon name="home" /> {t('web.availability.title')}</Link>
         )}
         {user.role === 'caregiver' && (
+          <Link className="quick-link" href={`/${locale}/care/identity`}><Icon name="user" /> {t('web.identity.title')}</Link>
+        )}
+        {user.role === 'caregiver' && (
           <Link className="quick-link" href={`/${locale}/care/payouts`}><Icon name="shield" /> {t('web.payouts.title')}</Link>
         )}
       </nav>

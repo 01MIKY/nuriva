@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { PaymentsError, type CheckoutState, type PaymentsProvider, type PayoutStatus } from './payments.js';
+import type { IdentityProvider, IdentityStatus } from './identity.js';
 
 /**
  * In-memory provider for automated tests ONLY. The API refuses to start with it in staging/production.
@@ -43,8 +44,33 @@ export function createFakePaymentsProvider() {
     },
   };
 
+  const verifications = new Map<string, { status: IdentityStatus; errorCode: string | null; reference: string }>();
+  const identity: IdentityProvider = {
+    name: 'fake',
+    async createVerification({ reference, returnUrl }) {
+      const v = id('vs');
+      verifications.set(v, { status: 'requires_input', errorCode: null, reference });
+      return { sessionId: v, url: `https://verify.stripe.test/start/${v}?return=${encodeURIComponent(returnUrl)}` };
+    },
+    async resumeUrl(sessionId) {
+      return verifications.get(sessionId)?.status === 'requires_input' ? `https://verify.stripe.test/start/${sessionId}` : null;
+    },
+    async getVerification(sessionId) {
+      const v = verifications.get(sessionId);
+      if (!v) throw new PaymentsError('resource_missing', 'No such verification session');
+      return { status: v.status, errorCode: v.errorCode };
+    },
+  };
+
   return {
     provider,
+    identity,
+    setVerification: (sessionId: string, status: IdentityStatus, errorCode: string | null = null) => {
+      const v = verifications.get(sessionId);
+      if (!v) throw new Error('unknown verification session');
+      verifications.set(sessionId, { ...v, status, errorCode });
+    },
+    verifications,
     completeOnboarding: (accountId: string) => accounts.set(accountId, { status: 'active' }),
     restrict: (accountId: string) => accounts.set(accountId, { status: 'restricted' }),
     pay: (sessionId: string) => {

@@ -6,10 +6,10 @@ import { buildApp } from './app.js';
 const config = loadConfig();
 const { db, pool } = createDb(config.DATABASE_URL);
 const cipher = createFieldCipher(parseKeyring(config.NURIVA_DATA_KEYS));
-const payments = config.paymentsProvider === 'stripe'
-  ? createStripeProvider({ secretKey: config.STRIPE_SECRET_KEY!, v2Version: config.STRIPE_API_VERSION_V2 })
-  : createFakePaymentsProvider().provider;
-const app = await buildApp({ config, db, cipher, payments });
+const providers = config.paymentsProvider === 'stripe'
+  ? (() => { const s = createStripeProvider({ secretKey: config.STRIPE_SECRET_KEY!, v2Version: config.STRIPE_API_VERSION_V2 }); return { payments: s, identity: s.identity }; })()
+  : (() => { const f = createFakePaymentsProvider(); return { payments: f.provider, identity: f.identity }; })();
+const app = await buildApp({ config, db, cipher, ...providers });
 
 const shutdown = async () => {
   await app.close();

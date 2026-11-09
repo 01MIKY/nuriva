@@ -21,6 +21,8 @@
 - **Accesibilidad:** ADA, objetivo WCAG 2.2 AA.
 - **Marca:** búsqueda de NURIVA en USPTO y EUIPO y compra de dominios.
 
+- **Datos biométricos (selfie de Stripe Identity):** Stripe procesa y guarda el selfie y el documento; NURIVA solo recibe el resultado. Preguntas para el abogado: si hace falta un consentimiento biométrico específico (Florida no tiene una ley como la BIPA de Illinois, pero conviene revisarlo para futuros estados) y qué texto de aviso mostrar antes de verificar.
+
 ## Cómo lo aplica el software
 - **Minimización de datos de menores:** solo nombre o apodo y edad en años. Sin fecha de nacimiento, fotos ni colegio. Todo cifrado y visible solo para el dueño (y en el futuro, para el cuidador de una reserva aceptada). Pregunta para el abogado: retención y borrado de estos datos al cerrar la cuenta.
 - **Gate de servicios:** ningún servicio se puede reservar sin una fila activa en `service_activations` con `compliance_ref` (referencia al documento de aprobación) creada por un superadmin. Cada cambio queda auditado.

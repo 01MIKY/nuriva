@@ -1,4 +1,5 @@
 import { PaymentsError, type CheckoutInput, type CheckoutResult, type CheckoutState, type PaymentsProvider, type PayoutStatus } from './payments.js';
+import type { IdentityProvider, IdentityStatus } from './identity.js';
 
 export interface StripeConfig {
   secretKey: string;
@@ -11,7 +12,7 @@ const form = (obj: Record<string, string | number | undefined>) =>
   new URLSearchParams(Object.entries(obj).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)])).toString();
 
 /** Minimal Stripe client using fetch. Errors are mapped to PaymentsError without leaking keys. */
-export function createStripeProvider(cfg: StripeConfig): PaymentsProvider {
+export function createStripeProvider(cfg: StripeConfig): PaymentsProvider & { identity: IdentityProvider } {
   const base = cfg.baseUrl ?? 'https://api.stripe.com';
   const auth = { Authorization: `Bearer ${cfg.secretKey}` };
 
@@ -34,8 +35,34 @@ export function createStripeProvider(cfg: StripeConfig): PaymentsProvider {
     return body as T;
   }
 
+  const identity: IdentityProvider = {
+    name: 'stripe',
+    async createVerification({ reference, returnUrl }) {
+      const v = await call<{ id: string; url: string }>('POST', '/v1/identity/verification_sessions', {
+        form: form({
+          type: 'document',
+          'options[document][require_matching_selfie]': 'true',
+          'options[document][require_live_capture]': 'true',
+          return_url: returnUrl,
+          client_reference_id: reference,
+          'metadata[platform]': 'nuriva',
+        }),
+      });
+      return { sessionId: v.id, url: v.url };
+    },
+    async resumeUrl(sessionId) {
+      const v = await call<{ url: string | null; status: string }>('GET', `/v1/identity/verification_sessions/${encodeURIComponent(sessionId)}`);
+      return v.status === 'requires_input' ? v.url : null;
+    },
+    async getVerification(sessionId) {
+      const v = await call<{ status: IdentityStatus; last_error: { code?: string } | null }>('GET', `/v1/identity/verification_sessions/${encodeURIComponent(sessionId)}`);
+      return { status: v.status, errorCode: v.last_error?.code ?? null };
+    },
+  };
+
   return {
     name: 'stripe',
+    identity,
 
     async createCaregiverAccount({ email, displayName }) {
       const acct = await call<{ id: string }>('POST', '/v2/core/accounts', {

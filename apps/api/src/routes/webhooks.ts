@@ -7,6 +7,7 @@ import type { Deps } from '../lib/context.js';
 import { audit } from '../lib/audit.js';
 import { refreshPayoutStatus } from './payouts.js';
 import { markBookingPaid } from './bookings.js';
+import { refreshIdentityStatus } from './identity.js';
 
 export const STRIPE_WEBHOOK_PATH = '/v1/webhooks/stripe';
 const CHECKOUT_PAID = new Set(['checkout.session.completed', 'checkout.session.async_payment_succeeded']);
@@ -44,6 +45,10 @@ export async function webhookRoutes(app: FastifyInstance, deps: Deps) {
           const [p] = await deps.db.select({ userId: caregiverProfiles.userId }).from(caregiverProfiles)
             .where(eq(caregiverProfiles.stripeAccountId, event.relatedObjectId));
           if (p) await refreshPayoutStatus(deps, p.userId);
+        } else if (event.type.startsWith('identity.verification_session.') && event.object?.id) {
+          const [p] = await deps.db.select({ userId: caregiverProfiles.userId }).from(caregiverProfiles)
+            .where(eq(caregiverProfiles.identitySessionId, String(event.object.id)));
+          if (p) await refreshIdentityStatus(deps, p.userId);
         } else if (CHECKOUT_PAID.has(event.type) && event.object) {
           const bookingId = Number((event.object.metadata as Record<string, string> | undefined)?.booking_id);
           const sessionId = String(event.object.id ?? '');

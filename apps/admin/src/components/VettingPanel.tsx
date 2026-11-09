@@ -7,12 +7,14 @@ import { apiPost } from '@/lib/client-api';
 
 const tone: Record<StepStatus, BadgeTone> = { not_started: 'neutral', pending: 'pending', passed: 'ok', failed: 'danger' };
 
-export function VettingPanel({ locale, caregiverId, initialSteps, canWrite, canBackground }: {
+export function VettingPanel({ locale, caregiverId, initialSteps, canWrite, canBackground, identityCheck }: {
   locale: Locale; caregiverId: number; initialSteps: Array<{ step: VettingStep; status: StepStatus }>; canWrite: boolean; canBackground: boolean;
+  identityCheck: { status: string; sessionId: string | null } | null;
 }) {
   const tr = (k: Parameters<typeof t>[1]) => t(locale, k);
   const [steps, setSteps] = useState(initialSteps);
   const [open, setOpen] = useState<VettingStep | null>(null);
+  const [prefill, setPrefill] = useState('');
   const [msg, setMsg] = useState<{ tone: 'info' | 'error'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -43,8 +45,16 @@ export function VettingPanel({ locale, caregiverId, initialSteps, canWrite, canB
                 <div className="vet-head">
                   <span className="vet-name">{tr(`vetting.steps.${step}`)}</span>
                   <Badge tone={tone[status]}>{tr(`vetting.status.${status}`)}</Badge>
+                  {step === 'identity' && identityCheck && identityCheck.status !== 'none' && (
+                    <Badge tone={identityCheck.status === 'verified' ? 'ok' : 'pending'}>{tr('web.identity.adminTitle')}: {tr(`web.identity.status${identityCheck.status.charAt(0).toUpperCase()}${identityCheck.status.slice(1)}` as Parameters<typeof t>[1])}</Badge>
+                  )}
+                  {step === 'identity' && canWrite && open !== step && identityCheck?.status === 'verified' && identityCheck.sessionId && (
+                    <button type="button" className="link-btn" onClick={() => { setPrefill(t(locale, 'web.identity.evidence', { id: identityCheck.sessionId! })); setOpen('identity'); setMsg(null); }}>
+                      {tr('web.identity.useAsEvidence')}
+                    </button>
+                  )}
                   {canWrite && !restricted && open !== step && (
-                    <button type="button" className="link-btn" onClick={() => { setOpen(step); setMsg(null); }} aria-label={`${tr('admin.detail.update')}: ${tr(`vetting.steps.${step}`)}`}>
+                    <button type="button" className="link-btn" onClick={() => { setPrefill(''); setOpen(step); setMsg(null); }} aria-label={`${tr('admin.detail.update')}: ${tr(`vetting.steps.${step}`)}`}>
                       {tr('admin.detail.update')}
                     </button>
                   )}
@@ -54,13 +64,13 @@ export function VettingPanel({ locale, caregiverId, initialSteps, canWrite, canB
                   <form className="vet-form" noValidate onSubmit={(e) => submit(e, step)} aria-label={`${tr('admin.detail.update')}: ${tr(`vetting.steps.${step}`)}`}>
                     <div className="n-field">
                       <label className="n-label" htmlFor={`st-${step}`}>{tr('admin.detail.status')}</label>
-                      <select id={`st-${step}`} name="status" className="n-input" defaultValue={status === 'not_started' ? 'pending' : status}>
+                      <select id={`st-${step}`} name="status" className="n-input" defaultValue={prefill ? 'passed' : status === 'not_started' ? 'pending' : status}>
                         {STEP_STATUSES.map((s) => <option key={s} value={s}>{tr(`vetting.status.${s}`)}</option>)}
                       </select>
                     </div>
                     <div className="n-field">
                       <label className="n-label" htmlFor={`ref-${step}`}>{tr('admin.detail.reference')}</label>
-                      <textarea id={`ref-${step}`} name="reference" className="n-input" rows={2} maxLength={500} required minLength={3} aria-describedby={`refh-${step}`} />
+                      <textarea id={`ref-${step}`} name="reference" className="n-input" rows={2} maxLength={500} required minLength={3} aria-describedby={`refh-${step}`} defaultValue={prefill} />
                       <span id={`refh-${step}`} className="n-hint">{tr('admin.detail.referenceHint')}</span>
                     </div>
                     <div className="n-row">

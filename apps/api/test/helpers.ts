@@ -35,7 +35,7 @@ export async function setup(opts: { paymentsEnabled?: boolean } = {}) {
     vetting_events, service_activations, dependents, audit_log, stripe_events RESTART IDENTITY CASCADE`);
   const cipher = createFieldCipher(parseKeyring(config.NURIVA_DATA_KEYS));
   const fakePayments = createFakePaymentsProvider();
-  const app = await buildApp({ config, db, cipher, payments: fakePayments.provider });
+  const app = await buildApp({ config, db, cipher, payments: fakePayments.provider, identity: fakePayments.identity });
 
   /** Makes a cookie-carrying client for one user. */
   function client(cookie = '') {

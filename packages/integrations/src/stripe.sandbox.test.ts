@@ -37,4 +37,18 @@ describe.skipIf(!run)('Stripe sandbox (live, test mode)', () => {
       });
     }
   }, 60_000);
+
+  it('creates a Stripe Identity session (document + live selfie), reads it and cancels it', async () => {
+    const v = await stripe.identity.createVerification({ reference: 'caregiver_sandbox', returnUrl: 'https://example.com/return' });
+    try {
+      expect(v.sessionId).toMatch(/^vs_/);
+      expect(new URL(v.url).host).toBe('verify.stripe.com');
+      expect(await stripe.identity.getVerification(v.sessionId)).toEqual({ status: 'requires_input', errorCode: null });
+      expect(await stripe.identity.resumeUrl(v.sessionId)).toMatch(/^https:\/\/verify\.stripe\.com\//);
+    } finally {
+      await fetch(`https://api.stripe.com/v1/identity/verification_sessions/${v.sessionId}/cancel`, {
+        method: 'POST', headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY ?? 'proxy-injected'}` },
+      });
+    }
+  }, 60_000);
 });

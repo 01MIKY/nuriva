@@ -73,10 +73,16 @@ export const caregiverProfiles = pgTable('caregiver_profiles', {
   stripeAccountId: text('stripe_account_id'),
   payoutStatus: text('payout_status').notNull().default('none'),
   payoutCheckedAt: timestamp('payout_checked_at', { withTimezone: true }),
+  /** Stripe Identity: only the session id and status are stored — never documents, selfies or birth dates. */
+  identitySessionId: text('identity_session_id'),
+  identityStatus: text('identity_status').notNull().default('none'),
+  identityErrorCode: text('identity_error_code'),
+  identityCheckedAt: timestamp('identity_checked_at', { withTimezone: true }),
   createdAt: createdAt(),
 }, (t) => [
   uniqueIndex('caregiver_profiles_public_id_uq').on(t.publicId),
   check('rate_range', sql`${t.hourlyRateCents} BETWEEN 1500 AND 20000`),
+  check('identity_status_values', sql`${t.identityStatus} IN ('none','requires_input','processing','verified','canceled')`),
   check('payout_status_values', sql`${t.payoutStatus} IN ('none','pending','restricted','active','unsupported')`),
   check('divisions_nonempty', sql`cardinality(${t.divisions}) > 0`),
 ]);
