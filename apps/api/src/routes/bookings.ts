@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { and, desc, eq, gt, inArray, lt, sql } from 'drizzle-orm';
 import { bookings, dependents, users, caregiverProfiles } from '@nuriva/db';
+import { applicationFeeCents, cancellationRefund } from '@nuriva/domain';
 import {
   DIVISIONS, DomainError, MULTI_DAY_SERVICES, SLOT_HOLDING, assertTransition, contactRevealed, fitsAvailability, publicName,
   quote, validateSchedule, zonedToUtc, type BookingStatus, type Division, type Service,
@@ -11,6 +12,7 @@ import { audit } from '../lib/audit.js';
 import { requireRole } from '../plugins/session.js';
 import { activeServices, bookableServices, isListed, loadCandidates, vettingFor } from './search.js';
 import { loadAvailability } from './caregiver.js';
+import { providerError, refreshPayoutStatus } from './payouts.js';
 
 const BookingRequest = z.object({
   caregiverId: z.string().uuid(),
@@ -26,6 +28,8 @@ const BookingRequest = z.object({
 
 const IdParam = z.object({ id: z.coerce.number().int().positive() }).strict();
 const CancelBody = z.object({ reason: z.string().trim().max(300).optional() }).strict();
+const CheckoutBody = z.object({ locale: z.enum(['en', 'es']).default('es') }).strict();
+const ConfirmBody = z.object({ sessionId: z.string().min(10).max(255) }).strict();
 
 interface DependentSnapshot { kind: 'child' | 'pet'; name: string; details: Record<string, unknown> }
 
@@ -76,6 +80,8 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
       notes: revealed && row.notesEnc ? cipher.decrypt(row.notesEnc) : null,
       detailsRevealed: revealed,
       viewerRole: role,
+      payment: { status: row.paymentStatus, paidCents: row.paidCents, refundedCents: row.refundedCents, paidAt: row.paidAt },
+      paymentsEnabled: deps.config.paymentsEnabled,
     };
   }
 
@@ -152,14 +158,28 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
       }
     }
     const updated = await db.transaction(async (tx) => {
+      // Lock the booking so two cancellations cannot both refund.
+      const [cur] = await tx.select().from(bookings).where(eq(bookings.id, row.id)).for('update');
+      if (!cur || cur.status !== row.status) throw new DomainError('stale', 'Booking changed, refresh', 409);
+      let refund = 0;
+      if (to === 'cancelled' && (cur.paymentStatus === 'paid' || cur.paymentStatus === 'partially_refunded')) {
+        refund = cancellationRefund({ status: cur.status, startAt: cur.startAt, subtotalCents: cur.subtotalCents, paidCents: cur.paidCents, refundedCents: cur.refundedCents }, role);
+        if (refund > 0) {
+          const [p] = await tx.select({ acct: caregiverProfiles.stripeAccountId }).from(caregiverProfiles).where(eq(caregiverProfiles.userId, cur.caregiverId));
+          try {
+            await deps.payments.refund(p!.acct!, cur.paymentIntentId!, refund, `booking-${cur.id}-refund-${cur.refundedCents}`);
+          } catch (e) { providerError(req, e); }
+        }
+      }
+      const refunded = cur.refundedCents + refund;
       const [u] = await tx.update(bookings).set({
         status: to,
         ...(to === 'accepted' || to === 'declined' ? { respondedAt: new Date() } : {}),
         ...(to === 'cancelled' ? { cancelledBy: req.user!.id } : {}),
-      }).where(and(eq(bookings.id, row.id), eq(bookings.status, row.status))).returning();
-      if (!u) throw new DomainError('stale', 'Booking changed, refresh', 409);
-      await audit(tx, req, `booking.${to}`, `booking:${row.id}`, { from: row.status });
-      return u;
+        ...(refund > 0 ? { refundedCents: refunded, paymentStatus: refunded >= cur.paidCents ? 'refunded' : 'partially_refunded' } : {}),
+      }).where(eq(bookings.id, row.id)).returning();
+      await audit(tx, req, `booking.${to}`, `booking:${row.id}`, { from: row.status, ...(refund > 0 ? { refundCents: refund } : {}) });
+      return u!;
     });
     return { booking: await present(updated, role) };
   }
@@ -171,5 +191,57 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
     CancelBody.parse(req.body ?? {});
     return transition(req, 'cancelled');
   });
-}
 
+  const payments = async () => {
+    if (!deps.config.paymentsEnabled) throw new DomainError('payments_disabled', 'Payments are not enabled', 403);
+  };
+
+  /** Family pays an accepted booking on Stripe Checkout (direct charge on the caregiver's account, ADR 0003). */
+  app.post('/bookings/:id/checkout', { preHandler: [requireRole('client'), payments] }, async (req) => {
+    const { locale } = CheckoutBody.parse(req.body ?? {});
+    const { id } = IdParam.parse(req.params);
+    const { row } = await loadFor(req, id);
+    if (row.status !== 'accepted') throw new DomainError('invalid_transition', 'Only accepted bookings can be paid', 409);
+    if (row.paymentStatus === 'paid') throw new DomainError('already_paid', 'Already paid', 409);
+    const [p] = await db.select({ acct: caregiverProfiles.stripeAccountId }).from(caregiverProfiles).where(eq(caregiverProfiles.userId, row.caregiverId));
+    try {
+      // Stripe accepts a Checkout before onboarding is complete, so NURIVA checks this itself.
+      if (!p?.acct || (await refreshPayoutStatus(deps, row.caregiverId)) !== 'active') {
+        throw new DomainError('payouts_not_ready', 'Caregiver cannot receive payments yet', 409);
+      }
+      const fee = applicationFeeCents(row.subtotalCents, row.clientFeeCents);
+      const back = `${deps.config.WEB_ORIGIN}/${locale}/bookings/${row.id}`;
+      const co = await deps.payments.createCheckout({
+        accountId: p.acct, amountCents: row.totalCents, applicationFeeCents: fee, bookingId: row.id, locale,
+        description: `NURIVA · ${row.service.replace(/_/g, ' ')} · #${row.id}`,
+        successUrl: `${back}?paid={CHECKOUT_SESSION_ID}`, cancelUrl: back,
+      });
+      await db.transaction(async (tx) => {
+        await tx.update(bookings).set({ checkoutSessionId: co.sessionId, paymentStatus: 'pending', applicationFeeCents: fee }).where(eq(bookings.id, row.id));
+        await audit(tx, req, 'booking.checkout_created', `booking:${row.id}`, { amountCents: row.totalCents, feeCents: fee });
+      });
+      return { url: co.url };
+    } catch (e) { return providerError(req, e); }
+  });
+
+  /** Called when the family returns from Checkout. Trusts only what Stripe reports for the stored session. */
+  app.post('/bookings/:id/payment/confirm', { preHandler: [requireRole('client'), payments] }, async (req) => {
+    const { sessionId } = ConfirmBody.parse(req.body);
+    const { id } = IdParam.parse(req.params);
+    const { row, role } = await loadFor(req, id);
+    if (row.paymentStatus === 'paid') return { booking: await present(row, role) }; // idempotent
+    if (!row.checkoutSessionId || row.checkoutSessionId !== sessionId) throw new DomainError('payment_mismatch', 'Unknown payment session', 409);
+    const [p] = await db.select({ acct: caregiverProfiles.stripeAccountId }).from(caregiverProfiles).where(eq(caregiverProfiles.userId, row.caregiverId));
+    let state;
+    try { state = await deps.payments.getCheckout(p!.acct!, sessionId); } catch (e) { return providerError(req, e); }
+    if (!state.paid || !state.paymentIntentId) throw new DomainError('payment_not_completed', 'Payment not completed', 409);
+    if (state.amountCents !== row.totalCents) throw new DomainError('payment_mismatch', 'Amount mismatch', 409);
+    const updated = await db.transaction(async (tx) => {
+      const [u] = await tx.update(bookings).set({ paymentStatus: 'paid', paymentIntentId: state.paymentIntentId, paidCents: state.amountCents, paidAt: new Date() })
+        .where(and(eq(bookings.id, row.id), eq(bookings.checkoutSessionId, sessionId))).returning();
+      await audit(tx, req, 'booking.paid', `booking:${row.id}`, { amountCents: state.amountCents });
+      return u!;
+    });
+    return { booking: await present(updated, role) };
+  });
+}

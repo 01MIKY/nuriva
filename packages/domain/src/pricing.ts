@@ -87,3 +87,22 @@ export function cancellationFee(
   if (hoursAhead >= POLICY.freeCancelHours) return 0;
   return Math.round(booking.subtotalCents * POLICY.lateCancelRate);
 }
+
+/** NURIVA's share of a direct charge: the client service fee plus the commission on the care subtotal. */
+export function applicationFeeCents(subtotalCents: number, clientFeeCents: number): number {
+  return clientFeeCents + Math.round(subtotalCents * POLICY.commissionRate);
+}
+
+/**
+ * Amount to refund when a PAID booking is cancelled (PLACEHOLDER policy, see POLICY):
+ * full refund unless the client cancels late, in which case `lateCancelRate` of the subtotal is kept.
+ */
+export function cancellationRefund(
+  booking: { status: string; startAt: Date; subtotalCents: number; paidCents: number; refundedCents: number },
+  byRole: ActorRole,
+  now: Date = new Date(),
+): number {
+  const refundable = booking.paidCents - booking.refundedCents;
+  const kept = cancellationFee(booking, byRole, now);
+  return Math.max(0, Math.min(refundable, refundable - kept));
+}

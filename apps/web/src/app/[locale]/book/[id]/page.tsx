@@ -21,7 +21,7 @@ export default async function BookPage({ params }: { params: Promise<{ locale: s
   const me = await apiGet<Me>('/v1/auth/me', locale);
   const user = me.body?.user;
   if (!user) redirect(`/${locale}/signin`);
-  const prof = (await apiGet<{ caregiver: PublicProfile; bookingsEnabled: boolean }>(`/v1/caregivers/${id}`, locale)).body;
+  const prof = (await apiGet<{ caregiver: PublicProfile; bookingsEnabled: boolean; paymentsEnabled?: boolean }>(`/v1/caregivers/${id}`, locale)).body;
   if (!prof) notFound();
   const c = prof.caregiver;
 
@@ -51,6 +51,7 @@ export default async function BookPage({ params }: { params: Promise<{ locale: s
         household={household.body?.dependents ?? []}
         windows={availability.body?.windows ?? []}
         minDate={tomorrow}
+        paymentsEnabled={prof.paymentsEnabled === true}
       />
     </div>
   );

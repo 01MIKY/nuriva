@@ -104,3 +104,22 @@ describe('public names', async () => {
     expect(initialsOf('valentina ríos')).toBe('VR');
   });
 });
+
+describe('payment amounts', async () => {
+  const { applicationFeeCents, cancellationRefund } = await import('./index.js');
+  const NOW2 = new Date('2026-11-02T12:00:00Z');
+  const paid = { status: 'accepted', subtotalCents: 10400, paidCents: 11440, refundedCents: 0 };
+  it('computes NURIVA\'s fee as service fee + 15 % commission', () => {
+    expect(applicationFeeCents(10400, 1040)).toBe(1040 + 1560);
+  });
+  it('refunds everything when cancelled 24 h or more ahead, or by the caregiver', () => {
+    expect(cancellationRefund({ ...paid, startAt: new Date(NOW2.getTime() + 48 * 3600_000) }, 'client', NOW2)).toBe(11440);
+    expect(cancellationRefund({ ...paid, startAt: new Date(NOW2.getTime() + 2 * 3600_000) }, 'caregiver', NOW2)).toBe(11440);
+  });
+  it('keeps 50 % of the care subtotal on a late client cancellation', () => {
+    expect(cancellationRefund({ ...paid, startAt: new Date(NOW2.getTime() + 2 * 3600_000) }, 'client', NOW2)).toBe(11440 - 5200);
+  });
+  it('never refunds more than what is left', () => {
+    expect(cancellationRefund({ ...paid, refundedCents: 11000, startAt: new Date(NOW2.getTime() + 48 * 3600_000) }, 'client', NOW2)).toBe(440);
+  });
+});

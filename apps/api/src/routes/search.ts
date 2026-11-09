@@ -121,6 +121,7 @@ export async function searchRoutes(app: FastifyInstance, deps: Deps) {
         divisions: byDivision, verifiedSteps: VETTING_STEPS, memberSince: row.createdAt,
       },
       bookingsEnabled: deps.config.bookingsEnabled,
+      paymentsEnabled: deps.config.paymentsEnabled,
     };
   });
 

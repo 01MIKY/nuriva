@@ -7,10 +7,11 @@ import { resolveLocale, translator } from '@/lib/i18n';
 import { apiGet, type Me } from '@/lib/server-api';
 import { formatRange, statusTone, type BookingView } from '@/lib/bookings';
 import { BookingActions } from '@/components/BookingActions';
+import { PaymentPanel } from '@/components/PaymentPanel';
 
 export const metadata: Metadata = { robots: { index: false } };
 
-export default async function BookingDetail({ params, searchParams }: { params: Promise<{ locale: string; id: string }>; searchParams: Promise<{ sent?: string }> }) {
+export default async function BookingDetail({ params, searchParams }: { params: Promise<{ locale: string; id: string }>; searchParams: Promise<{ sent?: string; paid?: string }> }) {
   const { id } = await params;
   const locale = await resolveLocale(params);
   const t = translator(locale);
@@ -19,7 +20,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
   if (!/^\d+$/.test(id)) notFound();
   const b = (await apiGet<{ booking: BookingView }>(`/v1/bookings/${id}`, locale)).body?.booking;
   if (!b) notFound();
-  const { sent } = await searchParams;
+  const { sent, paid } = await searchParams;
   const isCg = b.viewerRole === 'caregiver';
   const hidden = <span className="n-muted">{t('web.bookings.hiddenUntilAccept')}</span>;
 
@@ -62,8 +63,12 @@ export default async function BookingDetail({ params, searchParams }: { params: 
                 <div className="sum-total"><dt>{t('web.book.total')}</dt><dd>{formatMoney(locale, b.price.totalCents)}</dd></div>
               </>}
         </dl>
-        <p className="n-hint">{t('web.bookings.estimateNote')}</p>
+        {!b.paymentsEnabled && <p className="n-hint">{t('web.bookings.estimateNote')}</p>}
       </Card>
+      {b.paymentsEnabled && ['accepted', 'cancelled', 'completed', 'in_progress'].includes(b.status) && (
+        <PaymentPanel locale={locale} id={b.id} role={b.viewerRole} bookingStatus={b.status} payment={b.payment}
+          returnedSession={paid && /^cs_[A-Za-z0-9_]+$/.test(paid) ? paid : null} />
+      )}
       <BookingActions locale={locale} id={b.id} status={b.status} role={b.viewerRole} />
     </div>
   );

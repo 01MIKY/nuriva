@@ -200,9 +200,19 @@ export const bookings = pgTable('bookings', {
   totalCents: integer('total_cents').notNull(),
   respondedAt: timestamp('responded_at', { withTimezone: true }),
   cancelledBy: fk('cancelled_by').references(() => users.id),
+  /** Payment (direct charge on the caregiver's Stripe account, ADR 0003). Amounts in cents. */
+  paymentStatus: text('payment_status').notNull().default('none'),
+  checkoutSessionId: text('checkout_session_id'),
+  paymentIntentId: text('payment_intent_id'),
+  applicationFeeCents: integer('application_fee_cents'),
+  paidCents: integer('paid_cents').notNull().default(0),
+  refundedCents: integer('refunded_cents').notNull().default(0),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
   createdAt: createdAt(),
 }, (t) => [
   index('bookings_caregiver_time_idx').on(t.caregiverId, t.startAt),
   index('bookings_client_idx').on(t.clientId, t.startAt),
   check('booking_time_order', sql`${t.endAt} > ${t.startAt}`),
+  check('payment_status_values', sql`${t.paymentStatus} IN ('none','pending','paid','refunded','partially_refunded')`),
+  check('refund_not_above_paid', sql`${t.refundedCents} <= ${t.paidCents}`),
 ]);

@@ -10,6 +10,8 @@ export interface BookingView {
   client: { firstName: string };
   dependents: Array<{ kind: 'child' | 'pet'; name?: string; details: Record<string, string | number> }>;
   address: string | null; notes: string | null; detailsRevealed: boolean; viewerRole: 'client' | 'caregiver';
+  payment: { status: 'none' | 'pending' | 'paid' | 'refunded' | 'partially_refunded'; paidCents: number; refundedCents: number };
+  paymentsEnabled: boolean;
 }
 
 /** Half-hour options for time pickers. */

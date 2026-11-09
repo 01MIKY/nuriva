@@ -26,7 +26,7 @@ export interface PaymentsProvider {
   createCheckout(input: CheckoutInput): Promise<CheckoutResult>;
   getCheckout(accountId: string, sessionId: string): Promise<CheckoutState>;
   /** Refunds on the caregiver's account; NURIVA's fee is refunded proportionally. */
-  refund(accountId: string, paymentIntentId: string, amountCents: number): Promise<{ refundId: string }>;
+  refund(accountId: string, paymentIntentId: string, amountCents: number, idempotencyKey: string): Promise<{ refundId: string }>;
 }
 
 export class PaymentsError extends Error {

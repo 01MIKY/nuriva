@@ -15,10 +15,11 @@ export function createStripeProvider(cfg: StripeConfig): PaymentsProvider {
   const base = cfg.baseUrl ?? 'https://api.stripe.com';
   const auth = { Authorization: `Bearer ${cfg.secretKey}` };
 
-  async function call<T>(method: string, path: string, opts: { form?: string; json?: unknown; account?: string; v2?: boolean } = {}): Promise<T> {
+  async function call<T>(method: string, path: string, opts: { form?: string; json?: unknown; account?: string; v2?: boolean; idempotencyKey?: string } = {}): Promise<T> {
     const headers: Record<string, string> = { ...auth };
     if (opts.v2) headers['Stripe-Version'] = cfg.v2Version;
     if (opts.account) headers['Stripe-Account'] = opts.account;
+    if (opts.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey;
     if (opts.form !== undefined) headers['Content-Type'] = 'application/x-www-form-urlencoded';
     if (opts.json !== undefined) headers['Content-Type'] = 'application/json';
     const res = await fetch(`${base}${path}`, {
@@ -93,9 +94,10 @@ export function createStripeProvider(cfg: StripeConfig): PaymentsProvider {
       return { status: s.status, paid: s.payment_status === 'paid', paymentIntentId: s.payment_intent, amountCents: s.amount_total };
     },
 
-    async refund(accountId, paymentIntentId, amountCents) {
+    async refund(accountId, paymentIntentId, amountCents, idempotencyKey) {
       const r = await call<{ id: string }>('POST', '/v1/refunds', {
         account: accountId,
+        idempotencyKey,
         form: form({ payment_intent: paymentIntentId, amount: amountCents, refund_application_fee: 'true' }),
       });
       return { refundId: r.id };

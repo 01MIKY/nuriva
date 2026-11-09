@@ -4,7 +4,7 @@ Estado actual: **Stripe (modo de prueba) conectado** para las cuentas de cobro d
 
 | Proveedor | Para qué | Estado | Qué necesito del propietario |
 |---|---|---|---|
-| Stripe Connect (Accounts v2, panel Express, Managed Risk) | Cuentas de cobro de los cuidadores y cargos directos con la comisión de NURIVA | **Cuentas de cobro: hechas y probadas contra Stripe en modo de prueba.** El cobro de reservas está en curso | Ya tenemos la clave `sk_test_`. Más adelante: secreto de webhook |
+| Stripe Connect (Accounts v2, panel Express, Managed Risk) | Cuentas de cobro de los cuidadores y cargos directos con la comisión de NURIVA | **Cuentas de cobro y cobro de reservas con reembolsos: hechos.** Probados con el proveedor simulado y, en las llamadas de cuenta y Checkout, contra Stripe en modo de prueba. Faltan los webhooks | Ya tenemos la clave `sk_test_`. Más adelante: secreto de webhook |
 | Stripe Identity | Verificación de documento + selfie del cuidador | Disponible en la cuenta de prueba (comprobado). No integrado aún | Nada más |
 | Checkr | Antecedentes conforme a FCRA | Aprobado, no integrado | Alta de empresa en Checkr y clave de staging. Checkr exige verificar la empresa incluso para pruebas |
 | Twilio Verify | Códigos por SMS, verificación de teléfono | Aprobado, no integrado | Account SID, token y Verify Service SID |

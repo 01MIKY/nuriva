@@ -9,7 +9,8 @@ export function createFakePaymentsProvider() {
   const id = (p: string) => `${p}_fake_${randomBytes(6).toString('hex')}`;
   const accounts = new Map<string, { status: PayoutStatus }>();
   const sessions = new Map<string, { accountId: string; amount: number; fee: number; state: CheckoutState; bookingId: number }>();
-  const refunds: Array<{ accountId: string; paymentIntentId: string; amountCents: number }> = [];
+  const refunds: Array<{ accountId: string; paymentIntentId: string; amountCents: number; idempotencyKey: string }> = [];
+  const refundKeys = new Map<string, string>();
 
   const provider: PaymentsProvider = {
     name: 'fake',
@@ -31,15 +32,21 @@ export function createFakePaymentsProvider() {
       if (!s || s.accountId !== accountId) throw new PaymentsError('resource_missing', 'No such checkout session');
       return { ...s.state };
     },
-    async refund(accountId, paymentIntentId, amountCents) {
-      refunds.push({ accountId, paymentIntentId, amountCents });
-      return { refundId: id('re') };
+    async refund(accountId, paymentIntentId, amountCents, idempotencyKey) {
+      // Same idempotency key → same refund, like Stripe.
+      const existing = refundKeys.get(idempotencyKey);
+      if (existing) return { refundId: existing };
+      const refundId = id('re');
+      refundKeys.set(idempotencyKey, refundId);
+      refunds.push({ accountId, paymentIntentId, amountCents, idempotencyKey });
+      return { refundId };
     },
   };
 
   return {
     provider,
     completeOnboarding: (accountId: string) => accounts.set(accountId, { status: 'active' }),
+    restrict: (accountId: string) => accounts.set(accountId, { status: 'restricted' }),
     pay: (sessionId: string) => {
       const s = sessions.get(sessionId);
       if (!s) throw new Error('unknown session');

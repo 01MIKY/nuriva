@@ -14,11 +14,12 @@ interface Props {
   household: Dependent[];
   windows: Window[];
   minDate: string;
+  paymentsEnabled: boolean;
 }
 
 const minutesOf = (hhmm: string) => (hhmm === '24:00' ? 1440 : Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3)));
 
-export function BookingForm({ locale, caregiver, household, windows, minDate }: Props) {
+export function BookingForm({ locale, caregiver, household, windows, minDate, paymentsEnabled }: Props) {
   const tr = (k: MessageKey, v?: Record<string, string | number>) => t(locale, k, v);
   const router = useRouter();
   const [division, setDivision] = useState(caregiver.divisions[0]!.division);
@@ -144,7 +145,7 @@ export function BookingForm({ locale, caregiver, household, windows, minDate }: 
                 <div className="sum-total"><dt>{tr('web.book.total')}</dt><dd>{money(q.totalCents)}</dd></div>
               </dl>
             )}
-            <p className="n-hint">{tr('web.book.noCharge')}</p>
+            <p className="n-hint">{tr(paymentsEnabled ? 'web.pay.chargeAfterAccept' : 'web.book.noCharge')}</p>
           </div>
         </Card>
         <Card>
