@@ -91,7 +91,7 @@ export default async function SearchPage({ params, searchParams }: { params: Pro
                     <span className="cg-price">{formatMoney(locale, c.hourlyRateCents).replace(/\.00$/, '')}<small>{t('web.search.perHour')}</small></span>
                   </span>
                   <span className="cg-headline">{c.headline}</span>
-                  <span className="cg-meta">{t('web.search.years', { n: c.yearsExperience })} · {c.languages.map((l) => t(`web.care.languageNames.${l as 'en'}`)).join(', ')}</span>
+                  <span className="cg-meta">{c.rating ? `★ ${c.rating.avg.toLocaleString(locale)} (${c.rating.count}) · ` : ''}{t('web.search.years', { n: c.yearsExperience })} · {c.languages.map((l) => t(`web.care.languageNames.${l as 'en'}`)).join(', ')}</span>
                   <span className="cg-badges">
                     <span className="n-badge n-badge-ok">✓ {t('web.search.verified')}</span>
                     {c.services.slice(0, 3).map((s) => <span key={s} className="n-badge n-badge-neutral">{t(`services.${s}` as MessageKey)}</span>)}

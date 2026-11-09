@@ -8,6 +8,7 @@ import { apiGet, type Me } from '@/lib/server-api';
 import { formatRange, statusTone, type BookingView } from '@/lib/bookings';
 import { BookingActions } from '@/components/BookingActions';
 import { PaymentPanel } from '@/components/PaymentPanel';
+import { ChatPanel, IncidentPanel, ReviewPanel, TimelinePanel } from '@/components/ServicePanels';
 
 export const metadata: Metadata = { robots: { index: false } };
 
@@ -69,7 +70,11 @@ export default async function BookingDetail({ params, searchParams }: { params: 
         <PaymentPanel locale={locale} id={b.id} role={b.viewerRole} bookingStatus={b.status} payment={b.payment}
           returnedSession={paid && /^cs_[A-Za-z0-9_]+$/.test(paid) ? paid : null} />
       )}
+      {['accepted', 'in_progress', 'completed'].includes(b.status) && <TimelinePanel locale={locale} id={b.id} role={b.viewerRole} status={b.status} />}
+      {b.status === 'completed' && b.viewerRole === 'client' && <ReviewPanel locale={locale} id={b.id} />}
+      <ChatPanel locale={locale} id={b.id} closed={b.status === 'declined' || b.status === 'cancelled'} />
       <BookingActions locale={locale} id={b.id} status={b.status} role={b.viewerRole} />
+      <IncidentPanel locale={locale} id={b.id} division={b.division} />
     </div>
   );
 }

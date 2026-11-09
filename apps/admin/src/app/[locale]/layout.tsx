@@ -30,6 +30,7 @@ export default async function AdminLayout({ children, params }: { children: Reac
   const nav = staff ? [
     { href: 'caregivers', label: t('admin.nav.caregivers'), show: hasPermission(staff.staffRoles, 'caregivers.read') },
     { href: 'compliance', label: t('admin.nav.compliance'), show: hasPermission(staff.staffRoles, 'caregivers.read') },
+    { href: 'incidents', label: t('admin.nav.incidents'), show: hasPermission(staff.staffRoles, 'incidents.manage') },
     { href: 'audit', label: t('admin.nav.audit'), show: hasPermission(staff.staffRoles, 'audit.read') },
     { href: 'security', label: t('mfa.manage'), show: true },
   ].filter((n) => n.show) : [];

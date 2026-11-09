@@ -46,6 +46,7 @@ export default async function CaregiverProfilePage({ params }: { params: Promise
             <p className="profile-headline">{c.headline}</p>
             <p className="cg-meta">{t('web.search.years', { n: c.yearsExperience })} · {t('web.profile.memberSince', { date: since })}</p>
             <span className="n-badge n-badge-ok">✓ {t('web.search.verified')}</span>
+            {c.rating && <span className="rating-line" aria-label={t('web.service.stars', { n: c.rating.avg })}>★ {c.rating.avg.toLocaleString(locale)} · {t('web.profile.reviewCount', { n: c.rating.count })}</span>}
           </section>
 
           <section className="n-card n-stack" aria-labelledby="about-h">
@@ -64,6 +65,21 @@ export default async function CaregiverProfilePage({ params }: { params: Promise
             <h3 className="card-title small">{t('web.profile.languages')}</h3>
             <p>{c.languages.map((l) => t(`web.care.languageNames.${l as 'en'}`)).join(', ')}</p>
           </section>
+
+          {c.reviews.length > 0 && (
+            <section className="n-card n-stack" aria-labelledby="reviews-h">
+              <h2 id="reviews-h" className="card-title">{t('web.profile.reviews')}</h2>
+              <ul className="review-list">
+                {c.reviews.map((r, i) => (
+                  <li key={i}>
+                    <span className="stars" aria-label={t('web.service.stars', { n: r.rating })}>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span>
+                    {r.comment && <p>{r.comment}</p>}
+                    <small className="n-muted">{r.author} · {new Intl.DateTimeFormat(locale === 'es' ? 'es-US' : 'en-US', { month: 'long', year: 'numeric' }).format(new Date(r.createdAt))}</small>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <section className="n-card n-stack" aria-labelledby="checks-h">
             <h2 id="checks-h" className="card-title">{t('web.profile.checks')}</h2>

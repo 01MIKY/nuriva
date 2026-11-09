@@ -229,3 +229,56 @@ export const stripeEvents = pgTable('stripe_events', {
   type: text('type').notNull(),
   receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Messages between the two parties of a booking. Body encrypted. */
+export const bookingMessages = pgTable('booking_messages', {
+  id: id(),
+  bookingId: fk('booking_id').notNull().references(() => bookings.id, { onDelete: 'cascade' }),
+  senderId: fk('sender_id').notNull().references(() => users.id),
+  bodyEnc: text('body_enc').notNull(),
+  createdAt: createdAt(),
+}, (t) => [index('booking_messages_booking_idx').on(t.bookingId, t.id)]);
+
+export const bookingUpdateKind = pgEnum('booking_update_kind', ['check_in', 'update', 'check_out']);
+
+/** Care timeline written by the caregiver during the service. Notes encrypted. */
+export const bookingUpdates = pgTable('booking_updates', {
+  id: id(),
+  bookingId: fk('booking_id').notNull().references(() => bookings.id, { onDelete: 'cascade' }),
+  kind: bookingUpdateKind('kind').notNull(),
+  noteEnc: text('note_enc'),
+  createdAt: createdAt(),
+}, (t) => [index('booking_updates_booking_idx').on(t.bookingId, t.id)]);
+
+/** One review per completed booking, written by the family. Public text. */
+export const reviews = pgTable('reviews', {
+  id: id(),
+  bookingId: fk('booking_id').notNull().references(() => bookings.id),
+  clientId: fk('client_id').notNull().references(() => users.id),
+  caregiverId: fk('caregiver_id').notNull().references(() => users.id),
+  rating: integer('rating').notNull(),
+  comment: text('comment').notNull().default(''),
+  hidden: boolean('hidden').notNull().default(false),
+  createdAt: createdAt(),
+}, (t) => [
+  uniqueIndex('reviews_booking_uq').on(t.bookingId),
+  index('reviews_caregiver_idx').on(t.caregiverId),
+  check('rating_range', sql`${t.rating} BETWEEN 1 AND 5`),
+]);
+
+export const incidentSeverity = pgEnum('incident_severity', ['low', 'medium', 'high', 'emergency']);
+export const incidentStatus = pgEnum('incident_status', ['open', 'investigating', 'resolved']);
+
+/** Safety incidents reported by either party. Handled by Trust & Safety; description and notes encrypted. */
+export const incidents = pgTable('incidents', {
+  id: id(),
+  bookingId: fk('booking_id').notNull().references(() => bookings.id),
+  reporterId: fk('reporter_id').notNull().references(() => users.id),
+  severity: incidentSeverity('severity').notNull(),
+  status: incidentStatus('status').notNull().default('open'),
+  descriptionEnc: text('description_enc').notNull(),
+  resolutionEnc: text('resolution_enc'),
+  handledBy: fk('handled_by').references(() => users.id),
+  createdAt: createdAt(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('incidents_status_idx').on(t.status, t.createdAt)]);

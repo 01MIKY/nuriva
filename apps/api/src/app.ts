@@ -16,6 +16,7 @@ import { bookingRoutes } from './routes/bookings.js';
 import { payoutRoutes } from './routes/payouts.js';
 import { webhookRoutes } from './routes/webhooks.js';
 import { identityRoutes } from './routes/identity.js';
+import { serviceRoutes } from './routes/service.js';
 
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const options: FastifyServerOptions = {
@@ -55,6 +56,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
     await payoutRoutes(api, deps);
     await webhookRoutes(api, deps);
     await identityRoutes(api, deps);
+    await serviceRoutes(api, deps);
   }, { prefix: '/v1' });
 
   return app;

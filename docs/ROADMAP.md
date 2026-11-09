@@ -55,10 +55,10 @@ Requiere: claves de prueba de Stripe Connect (solo para reservar y pagar).
 - [x] Aceptar, rechazar y cancelar
 - [x] Retención por cancelación tardía (política provisional: 50 % del cuidado)
 
-## Fase 4: el servicio
+## Fase 4: el servicio (núcleo hecho; faltan las notificaciones)
 Requiere: claves de prueba de Twilio y Postmark.
-- [ ] Check-in/out, actualizaciones al cliente, chat
-- [ ] Reseñas, incidentes, botón de emergencia con el 911
+- [x] Check-in/out, actualizaciones al cliente, chat
+- [x] Reseñas, incidentes, botón de emergencia con el 911 (y Florida Abuse Hotline en Kids)
 - [ ] Notificaciones por email, SMS y push
 
 ## Fase 5: operaciones

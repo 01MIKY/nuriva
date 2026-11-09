@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { and, desc, eq, inArray } from 'drizzle-orm';
-import { users, caregiverProfiles, vettingRecords, serviceActivations } from '@nuriva/db';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { users, caregiverProfiles, vettingRecords, serviceActivations, reviews } from '@nuriva/db';
 import {
   DIVISIONS, LANGUAGES, VETTING_STEPS, SERVICES, DomainError, bookability, publicName, initialsOf, profileGaps,
   type Division, type VettingState,
@@ -58,6 +58,16 @@ export async function vettingFor(deps: Deps, ids: number[]): Promise<Map<number,
   return out;
 }
 
+/** Rating summary from visible reviews of completed bookings. */
+async function ratings(deps: Deps, ids: number[]) {
+  const out = new Map<number, { avg: number; count: number }>();
+  if (!ids.length) return out;
+  const rows = await deps.db.select({ cg: reviews.caregiverId, avg: sql<number>`round(avg(${reviews.rating})::numeric, 1)::float`, count: sql<number>`count(*)::int` })
+    .from(reviews).where(and(inArray(reviews.caregiverId, ids), eq(reviews.hidden, false))).groupBy(reviews.caregiverId);
+  for (const r of rows) out.set(r.cg, { avg: r.avg, count: r.count });
+  return out;
+}
+
 /** Services this caregiver can actually be booked for in a division: offered by them AND active in the register. */
 export function bookableServices(row: Row, division: Division, active: Set<string>): string[] {
   return row.services.filter((s) => (SERVICES[division] as readonly string[]).includes(s) && active.has(`${division}.${s}`));
@@ -89,6 +99,7 @@ export async function searchRoutes(app: FastifyInstance, deps: Deps) {
       .filter(({ row, services }) => (!q.service || services.includes(q.service))
         && (!q.language || row.languages.includes(q.language))
         && (!q.maxRate || row.hourlyRateCents <= q.maxRate * 100));
+    const rated = await ratings(deps, results.map((r) => r.row.userId));
     results = results.sort((a, b) => q.sort === 'rate' ? a.row.hourlyRateCents - b.row.hourlyRateCents
       : q.sort === 'experience' ? b.row.yearsExperience - a.row.yearsExperience
       : b.row.yearsExperience - a.row.yearsExperience || a.row.hourlyRateCents - b.row.hourlyRateCents);
@@ -99,6 +110,7 @@ export async function searchRoutes(app: FastifyInstance, deps: Deps) {
       results: results.slice(0, 50).map(({ row, services }) => ({
         id: row.publicId, displayName: publicName(row.name), initials: initialsOf(row.name), headline: row.headline,
         hourlyRateCents: row.hourlyRateCents, yearsExperience: row.yearsExperience, languages: row.languages, services, verified: true,
+        rating: rated.get(row.userId) ?? null,
       })),
     };
   });
@@ -114,8 +126,14 @@ export async function searchRoutes(app: FastifyInstance, deps: Deps) {
       .map((d) => ({ division: d, services: bookableServices(row, d, active) }));
     // Not bookable anywhere → indistinguishable from a profile that does not exist.
     if (!byDivision.length) throw new DomainError('not_found', 'Not found', 404);
+    const rated = (await ratings(deps, [row.userId])).get(row.userId) ?? null;
+    const latest = await deps.db.select({ rating: reviews.rating, comment: reviews.comment, createdAt: reviews.createdAt, author: users.name })
+      .from(reviews).innerJoin(users, eq(users.id, reviews.clientId))
+      .where(and(eq(reviews.caregiverId, row.userId), eq(reviews.hidden, false))).orderBy(desc(reviews.createdAt)).limit(10);
     return {
       caregiver: {
+        rating: rated,
+        reviews: latest.map((r) => ({ rating: r.rating, comment: r.comment, createdAt: r.createdAt, author: (r.author.split(' ')[0] ?? '') })),
         id: row.publicId, displayName: publicName(row.name), initials: initialsOf(row.name), headline: row.headline, bio: row.bio,
         hourlyRateCents: row.hourlyRateCents, yearsExperience: row.yearsExperience, languages: row.languages,
         divisions: byDivision, verifiedSteps: VETTING_STEPS, memberSince: row.createdAt,

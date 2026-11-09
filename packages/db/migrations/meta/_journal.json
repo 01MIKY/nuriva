@@ -71,6 +71,13 @@
       "when": 1794252442459,
       "tag": "0009_identity_verification",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794267255468,
+      "tag": "0010_service_messages_reviews_incidents",
+      "breakpoints": true
     }
   ]
 }
