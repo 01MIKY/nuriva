@@ -238,6 +238,7 @@ export const es: Catalog = {
       perHour: '/hora',
       emptyTitle: 'Todavía no hay cuidadores disponibles',
       emptyBody: 'Estamos revisando cuidadores en Miami. Crea tu cuenta y te avisaremos cuando abran las reservas.',
+      emptyBodySignedIn: 'Estamos revisando cuidadores en Miami. Te avisaremos cuando abran las reservas.',
       emptyFiltered: 'Ningún cuidador coincide con estos filtros. Prueba a quitar alguno.',
       clear: 'Quitar filtros',
       viewProfile: 'Ver perfil',

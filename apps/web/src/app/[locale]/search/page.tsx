@@ -4,7 +4,7 @@ import { Icon, buttonClass } from '@nuriva/ui';
 import { LANGUAGES } from '@nuriva/domain';
 import { formatMoney, type MessageKey } from '@nuriva/i18n';
 import { resolveLocale, translator } from '@/lib/i18n';
-import { apiGet } from '@/lib/server-api';
+import { apiGet, type Me } from '@/lib/server-api';
 import { avatarTint, type SearchResponse } from '@/lib/search';
 import { SearchFilters } from '@/components/SearchFilters';
 
@@ -28,7 +28,9 @@ export default async function SearchPage({ params, searchParams }: { params: Pro
   if (sp.service && /^[a-z_]{3,30}$/.test(sp.service)) qs.set('service', sp.service);
   if (language) qs.set('language', language);
   if (sort) qs.set('sort', sort);
-  const data = (await apiGet<SearchResponse>(`/v1/caregivers/search?${qs}`, locale)).body;
+  const [res, me] = await Promise.all([apiGet<SearchResponse>(`/v1/caregivers/search?${qs}`, locale), apiGet<Me>('/v1/auth/me', locale)]);
+  const data = res.body;
+  const signedIn = !!me.body?.user;
   const results = data?.results ?? [];
   const available = data?.availableServices ?? [];
   const service = qs.get('service') && available.includes(qs.get('service')!) ? qs.get('service') : null;
@@ -72,7 +74,8 @@ export default async function SearchPage({ params, searchParams }: { params: Pro
           <h2 className="card-title">{filtered ? t('web.search.emptyFiltered') : t('web.search.emptyTitle')}</h2>
           {filtered
             ? <Link className={buttonClass('quiet')} href={`/${locale}/search?division=${division}`}>{t('web.search.clear')}</Link>
-            : <><p className="n-muted">{t('web.search.emptyBody')}</p><Link className={buttonClass('primary')} href={`/${locale}/signup?role=client`}>{t('auth.createAccount')}</Link></>}
+            : <><p className="n-muted">{t(signedIn ? 'web.search.emptyBodySignedIn' : 'web.search.emptyBody')}</p>
+                {!signedIn && <Link className={buttonClass('primary')} href={`/${locale}/signup?role=client`}>{t('auth.createAccount')}</Link>}</>}
         </div>
       ) : (
         <ul className="cg-grid">

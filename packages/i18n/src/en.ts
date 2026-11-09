@@ -236,6 +236,7 @@ export const en = {
       perHour: '/hour',
       emptyTitle: 'No caregivers available yet',
       emptyBody: 'We are reviewing caregivers in Miami right now. Create your account and we will let you know when booking opens.',
+      emptyBodySignedIn: 'We are reviewing caregivers in Miami right now. We will let you know when booking opens.',
       emptyFiltered: 'No caregivers match these filters. Try removing one.',
       clear: 'Clear filters',
       viewProfile: 'View profile',
