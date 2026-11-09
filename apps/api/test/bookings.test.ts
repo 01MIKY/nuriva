@@ -128,10 +128,28 @@ describe('availability and booking requests', () => {
 describe('bookings are closed in staging/production until payments are connected', async () => {
   const { loadConfig } = await import('../src/config.js');
   it('defaults to off in strict environments and on locally', () => {
-    const base = { DATABASE_URL: 'postgres://u:p@db.example.com/x', NURIVA_DATA_KEYS: 'k:x' };
+    const base = { DATABASE_URL: 'postgres://u:p@db.example.com/x', NURIVA_DATA_KEYS: 'k:x', STRIPE_SECRET_KEY: 'sk_test_placeholder' };
     expect(loadConfig({ ...base, NURIVA_ENV: 'production' }).bookingsEnabled).toBe(false);
     expect(loadConfig({ ...base, NURIVA_ENV: 'staging' }).bookingsEnabled).toBe(false);
     expect(loadConfig({ ...base, NURIVA_ENV: 'development' }).bookingsEnabled).toBe(true);
     expect(loadConfig({ ...base, NURIVA_ENV: 'staging', BOOKINGS_ENABLED: 'true' }).bookingsEnabled).toBe(true);
   });
 });
+
+describe('payments configuration safeguards', async () => {
+  const { loadConfig } = await import('../src/config.js');
+  const base = { DATABASE_URL: 'postgres://u:p@db.example.com/x', NURIVA_DATA_KEYS: 'k:x' };
+  it('refuses the fake provider in staging and production', () => {
+    expect(() => loadConfig({ ...base, NURIVA_ENV: 'production', PAYMENTS_PROVIDER: 'fake' })).toThrow(/not allowed/);
+    expect(() => loadConfig({ ...base, NURIVA_ENV: 'staging', PAYMENTS_PROVIDER: 'fake' })).toThrow(/not allowed/);
+  });
+  it('requires a Stripe key, and refuses live keys outside production', () => {
+    expect(() => loadConfig({ ...base, NURIVA_ENV: 'development' })).toThrow(/STRIPE_SECRET_KEY is required/);
+    expect(() => loadConfig({ ...base, NURIVA_ENV: 'staging', STRIPE_SECRET_KEY: 'sk_live_abc' })).toThrow(/Live Stripe keys/);
+    expect(loadConfig({ ...base, NURIVA_ENV: 'production', STRIPE_SECRET_KEY: 'sk_live_abc' }).paymentsEnabled).toBe(false);
+  });
+  it('uses the fake provider by default only in tests', () => {
+    expect(loadConfig({ ...base, NURIVA_ENV: 'test' }).paymentsProvider).toBe('fake');
+  });
+});
+

@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { sql } from 'drizzle-orm';
 import { createDb, createFieldCipher, parseKeyring } from '@nuriva/db';
+import { createFakePaymentsProvider } from '@nuriva/integrations';
 import { setup, TEST_DB } from './helpers.js';
 import { base32Decode, totp, timeStep } from '../src/lib/totp.js';
 import { buildApp } from '../src/app.js';
@@ -125,9 +126,11 @@ describe('MFA enforcement in staging/production', () => {
       ...h.app.initialConfig as never, NURIVA_ENV: 'staging', strict: true, PORT: 0, DATABASE_URL: TEST_DB,
       NURIVA_DATA_KEYS: `s1:${randomBytes(32).toString('base64')}`, APP_ORIGINS: 'https://app.nuriva.test', origins: ['https://app.nuriva.test'],
       TERMS_VERSION: 't', AUTH_RATE_LIMIT: 1000, SESSION_TTL_HOURS: 1,
-    };
+      bookingsEnabled: false, trustedProxyHops: 2, RATE_LIMIT_PER_MINUTE: 1000,
+      paymentsProvider: 'fake', paymentsEnabled: false, STRIPE_API_VERSION_V2: 'x', WEB_ORIGIN: 'https://app.nuriva.test',
+    } as Config;
     const { db, pool } = createDb(TEST_DB);
-    const app = await buildApp({ config, db, cipher: createFieldCipher(parseKeyring(config.NURIVA_DATA_KEYS)) });
+    const app = await buildApp({ config, db, cipher: createFieldCipher(parseKeyring(config.NURIVA_DATA_KEYS)), payments: createFakePaymentsProvider().provider });
     const origin = { origin: 'https://app.nuriva.test' };
     try {
       const reg = await app.inject({ method: 'POST', url: '/v1/auth/register', headers: origin, payload: {

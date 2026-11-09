@@ -43,6 +43,13 @@
       "when": 1794243307041,
       "tag": "0005_availability_and_bookings",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794250613096,
+      "tag": "0006_caregiver_payouts",
+      "breakpoints": true
     }
   ]
 }

@@ -18,6 +18,7 @@
     "@nuriva/db": "workspace:*",
     "@nuriva/domain": "workspace:*",
     "@nuriva/i18n": "workspace:*",
+    "@nuriva/integrations": "workspace:*",
     "drizzle-orm": "~0.44.7",
     "fastify": "^5.12.8",
     "pg": "^8.23.1",

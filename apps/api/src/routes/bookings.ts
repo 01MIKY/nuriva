@@ -84,7 +84,7 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
     const [row] = await loadCandidates(deps, eq(caregiverProfiles.publicId, b.caregiverId));
     if (!row) throw new DomainError('not_bookable', 'Not bookable', 409);
     const [active, vetting] = await Promise.all([activeServices(deps), vettingFor(deps, [row.userId])]);
-    if (!isListed(row, b.division, vetting.get(row.userId), active) || !bookableServices(row, b.division, active).includes(b.service)) {
+    if (!isListed(row, b.division, vetting.get(row.userId), active, deps.config.paymentsEnabled) || !bookableServices(row, b.division, active).includes(b.service)) {
       throw new DomainError('not_bookable', 'Not bookable', 409);
     }
     const multiDay = MULTI_DAY_SERVICES.has(b.service as Service);
@@ -146,7 +146,7 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
       // A caregiver can only accept while every approval is still valid and the service is still active.
       const [cand] = await loadCandidates(deps, eq(users.id, row.caregiverId));
       const [active, vetting] = await Promise.all([activeServices(deps), vettingFor(deps, [row.caregiverId])]);
-      if (!cand || !isListed(cand, row.division as Division, vetting.get(row.caregiverId), active)
+      if (!cand || !isListed(cand, row.division as Division, vetting.get(row.caregiverId), active, deps.config.paymentsEnabled)
         || !bookableServices(cand, row.division as Division, active).includes(row.service)) {
         throw new DomainError('not_bookable', 'Not bookable', 409);
       }

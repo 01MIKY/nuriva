@@ -69,10 +69,15 @@ export const caregiverProfiles = pgTable('caregiver_profiles', {
   languages: text('languages').array().notNull().default(sql`ARRAY['en']::text[]`),
   services: text('services').array().notNull().default(sql`ARRAY[]::text[]`),
   zip: text('zip'),
+  /** Stripe connected account (direct charges, ADR 0003) and its last known card_payments status. */
+  stripeAccountId: text('stripe_account_id'),
+  payoutStatus: text('payout_status').notNull().default('none'),
+  payoutCheckedAt: timestamp('payout_checked_at', { withTimezone: true }),
   createdAt: createdAt(),
 }, (t) => [
   uniqueIndex('caregiver_profiles_public_id_uq').on(t.publicId),
   check('rate_range', sql`${t.hourlyRateCents} BETWEEN 1500 AND 20000`),
+  check('payout_status_values', sql`${t.payoutStatus} IN ('none','pending','restricted','active','unsupported')`),
   check('divisions_nonempty', sql`cardinality(${t.divisions}) > 0`),
 ]);
 

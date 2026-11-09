@@ -27,6 +27,7 @@ export async function loadCandidates(deps: Deps, where?: ReturnType<typeof eq>) 
     publicId: caregiverProfiles.publicId, divisions: caregiverProfiles.divisions, headline: caregiverProfiles.headline,
     bio: caregiverProfiles.bio, hourlyRateCents: caregiverProfiles.hourlyRateCents, yearsExperience: caregiverProfiles.yearsExperience,
     languages: caregiverProfiles.languages, services: caregiverProfiles.services, zip: caregiverProfiles.zip,
+    payoutStatus: caregiverProfiles.payoutStatus,
   }).from(users).innerJoin(caregiverProfiles, eq(caregiverProfiles.userId, users.id))
     .where(where ? and(eq(users.status, 'active'), where) : eq(users.status, 'active')).limit(1000);
 }
@@ -62,8 +63,13 @@ export function bookableServices(row: Row, division: Division, active: Set<strin
   return row.services.filter((s) => (SERVICES[division] as readonly string[]).includes(s) && active.has(`${division}.${s}`));
 }
 
-export function isListed(row: Row, division: Division, vetting: VettingState | undefined, active: Set<string>) {
+/**
+ * Single listing rule. With payments enabled, a caregiver must also be able to receive payments
+ * (Stripe card_payments active), otherwise a family could not complete a booking.
+ */
+export function isListed(row: Row, division: Division, vetting: VettingState | undefined, active: Set<string>, requirePayouts = false) {
   if (!vetting || profileGaps(row).length > 0) return false;
+  if (requirePayouts && row.payoutStatus !== 'active') return false;
   const svc = bookableServices(row, division, active);
   return bookability({ accountActive: row.status === 'active', vetting, caregiverDivisions: row.divisions, division, serviceActive: svc.length > 0 }).ok;
 }
@@ -78,7 +84,7 @@ export async function searchRoutes(app: FastifyInstance, deps: Deps) {
     const [rows, active] = await Promise.all([loadCandidates(deps), activeServices(deps)]);
     const vetting = await vettingFor(deps, rows.map((r) => r.userId));
     let results = rows
-      .filter((r) => isListed(r, q.division, vetting.get(r.userId), active))
+      .filter((r) => isListed(r, q.division, vetting.get(r.userId), active, deps.config.paymentsEnabled))
       .map((r) => ({ row: r, services: bookableServices(r, q.division, active) }))
       .filter(({ row, services }) => (!q.service || services.includes(q.service))
         && (!q.language || row.languages.includes(q.language))
@@ -104,7 +110,7 @@ export async function searchRoutes(app: FastifyInstance, deps: Deps) {
     if (!row) throw new DomainError('not_found', 'Not found', 404);
     const vetting = (await vettingFor(deps, [row.userId])).get(row.userId);
     const byDivision = row.divisions
-      .filter((d) => isListed(row, d, vetting, active))
+      .filter((d) => isListed(row, d, vetting, active, deps.config.paymentsEnabled))
       .map((d) => ({ division: d, services: bookableServices(row, d, active) }));
     // Not bookable anywhere → indistinguishable from a profile that does not exist.
     if (!byDivision.length) throw new DomainError('not_found', 'Not found', 404);
@@ -124,7 +130,7 @@ export async function searchRoutes(app: FastifyInstance, deps: Deps) {
     const [rows, active] = await Promise.all([loadCandidates(deps, eq(caregiverProfiles.publicId, id)), activeServices(deps)]);
     const row = rows[0];
     const vetting = row ? (await vettingFor(deps, [row.userId])).get(row.userId) : undefined;
-    if (!row || !row.divisions.some((d) => isListed(row, d, vetting, active))) throw new DomainError('not_found', 'Not found', 404);
+    if (!row || !row.divisions.some((d) => isListed(row, d, vetting, active, deps.config.paymentsEnabled))) throw new DomainError('not_found', 'Not found', 404);
     return { timeZone: 'America/New_York', windows: await loadAvailability(deps, row.userId) };
   });
 }

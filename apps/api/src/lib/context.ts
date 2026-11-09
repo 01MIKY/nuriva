@@ -1,4 +1,5 @@
 import type { Db, FieldCipher } from '@nuriva/db';
+import type { PaymentsProvider } from '@nuriva/integrations';
 import type { AccountRole, StaffRole } from '@nuriva/domain';
 import type { Locale } from '@nuriva/i18n';
 import type { Config } from '../config.js';
@@ -7,6 +8,7 @@ export interface Deps {
   config: Config;
   db: Db;
   cipher: FieldCipher;
+  payments: PaymentsProvider;
 }
 
 export interface SessionUser {
