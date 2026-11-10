@@ -7,7 +7,7 @@
 | # | Decisión | Estado |
 |---|---|---|
 | D1 | Monorepo TypeScript, Next.js, API Fastify, PostgreSQL | Aprobado |
-| D2 | AWS con desarrollo / staging / producción | Aprobado (infraestructura aún no creada) |
+| D2 | Entornos desarrollo / staging / producción. **Staging en Render** (ADR 0004, 10 nov); producción: Render o AWS, por decidir antes del lanzamiento | Aprobado |
 | D3 | PWA primero, apps nativas en fase 7 | Aprobado |
 | D4 | Sandbox: Stripe Connect + Identity, Checkr, Twilio + Postmark | Aprobado. **Stripe (prueba) conectado**; faltan Checkr, Twilio y Postmark |
 | D5 | Modelo legal | Recomendación: marketplace. **Pendiente de abogado** |
@@ -45,7 +45,8 @@
 | Servicio en curso: mensajes cifrados entre las dos partes; llegada (desde 30 min antes y, con pagos activados, solo si está pagada), novedades y salida del cuidador; reseña única de la familia tras terminar (hasta 30 días después), visible en el perfil y en la búsqueda; reporte de incidentes con aviso de 911 y Florida Abuse Hotline; gestión por Trust & Safety en el panel (descripción cifrada, cada lectura auditada) | Hecho | 7 API + 1 e2e |
 | Moderación de reseñas: permiso `reviews.moderate` (Trust & Safety y superadmin); pantalla "Reseñas" en el panel con filtro todas/ocultas; ocultar o volver a mostrar exige un motivo, que queda en la auditoría; una reseña oculta desaparece del perfil y de la nota media. La política (no ocultar reseñas por ser negativas) se muestra en la pantalla | Hecho | 1 API (6 casos) + e2e |
 | **Pendiente en pagos:** probar el pago completo con tarjeta de prueba en navegador contra Stripe real; decidir quién absorbe la comisión de Stripe (ADR 0003); aceptar varios secretos de webhook si hiciera falta | Pendiente | — |
-| Infraestructura AWS (Terraform) | Pendiente: necesita cuenta AWS y aprobación de costes | — |
+| Publicación de prueba en Render: `render.yaml` (API privada, web, admin y PostgreSQL privado), imágenes Docker, migraciones antes de cada despliegue, solo tras CI en verde, aviso "versión de prueba" y `noindex`, IP del visitante no falsificable. Probado en local con Docker en modo staging (migraciones, registro, cookies seguras, origen, MFA obligatoria) | Listo para publicar; **falta la cuenta de Render** del propietario | 5 config + 2 e2e |
+| Infraestructura de producción | Pendiente: decidir Render o AWS antes del lanzamiento | — |
 
 ## Valores provisionales (requieren aprobación de negocio)
 

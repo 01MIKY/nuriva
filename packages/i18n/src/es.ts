@@ -4,6 +4,7 @@ import type { Catalog } from './types.js';
 export const es: Catalog = {
   brand: { name: 'NURIVA', tagline: 'Cuidado en el que puedes confiar', network: 'Red Internacional de Cuidado' },
   divisions: { kids: 'NURIVA Kids', pets: 'NURIVA Pets' },
+  staging: { banner: 'Versión de prueba de NURIVA. No introduzcas datos personales ni de pago reales: los datos pueden borrarse.' },
   services: {
     occasional: 'Cuidado ocasional',
     scheduled: 'Cuidado programado',

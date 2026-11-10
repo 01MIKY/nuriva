@@ -251,3 +251,4 @@ a.toggle-chip { text-decoration: none; }
 .review-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
 .review-list li { display: grid; gap: 4px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
 .review-list li:last-child { border-bottom: 0; padding-bottom: 0; }
+.staging-banner { background: #FFE8A3; color: #3A2A00; text-align: center; font: 600 0.85rem/1.4 var(--f-body); padding: 6px 16px; }

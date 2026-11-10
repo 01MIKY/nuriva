@@ -5,7 +5,7 @@
 - Sesiones **en servidor**: el navegador recibe un token aleatorio de 256 bits; la base de datos solo guarda su SHA-256. Se pueden revocar (logout, "cerrar sesión en todos los dispositivos").
 - Cookie `httpOnly`, `SameSite=Lax`. En staging y producción: `Secure` y prefijo `__Host-`.
 - Mismo error y tiempo de respuesta para "email desconocido" y "contraseña incorrecta", para no revelar qué cuentas existen.
-- Límite de intentos: 10 por 15 minutos en registro y login; 300 por minuto en general (`RATE_LIMIT_PER_MINUTE`). Cuentan **por visitante**: las apps reenvían la IP real (`X-Forwarded-For`) y la API solo se fía de los saltos configurados (`TRUSTED_PROXY_HOPS`; 2 en staging y producción: balanceador + proxy web). **Pendiente de infraestructura:** el balanceador debe sobrescribir `X-Forwarded-For` para que nadie pueda falsearlo.
+- Límite de intentos: 10 por 15 minutos en registro y login; 300 por minuto en general (`RATE_LIMIT_PER_MINUTE`). Cuentan **por visitante**. La API es privada y solo se llega a ella a través de las apps web y admin, que reducen la IP del visitante a una sola dirección (`apps/*/src/lib/upstream.ts`: la que vio el borde del proveedor, o `CLIENT_IP_HEADER`). Nunca reenvían una cadena `X-Forwarded-For` escrita por el cliente. La API confía en un único salto (`TRUSTED_PROXY_HOPS=1`). Tras cada despliegue nuevo se comprueba que la IP no se puede falsificar (`docs/DEPLOY.md`).
 - **Verificación en dos pasos (TOTP, RFC 6238)**, compatible con Google Authenticator, 1Password, Authy y similares:
   - Alta con código QR. El secreto queda cifrado y pendiente hasta confirmarlo con un código válido.
   - 10 códigos de recuperación de un solo uso, mostrados una única vez. Solo se guarda su hash.
@@ -23,7 +23,7 @@
 ## Datos sensibles
 - Cifrado por campo AES-256-GCM (columnas `*_enc`) para datos de menores y mascotas, teléfonos, contactos de emergencia y referencias de antecedentes.
 - Formato con identificador de clave (`v1.<kid>...`), lo que permite rotar claves sin perder la lectura de datos antiguos.
-- En producción las claves estarán en AWS Secrets Manager / KMS, nunca en el código.
+- Staging: la clave la genera Render una sola vez (`NURIVA_DATA_KEY`) y el propietario guarda una copia. En producción se definirá un gestor de claves (KMS o equivalente) antes del lanzamiento. Nunca en el código.
 
 ## Integridad
 - `audit_log` y `vetting_events` son de solo inserción: un trigger de PostgreSQL bloquea UPDATE y DELETE.

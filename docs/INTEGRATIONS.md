@@ -11,7 +11,7 @@ Estado actual: **Stripe (modo de prueba) conectado** para las cuentas de cobro d
 | Postmark | Email transaccional EN/ES | Aprobado, no integrado | Server token y dominio de envío verificado |
 
 ## Reglas
-- Las claves van en variables de entorno o en AWS Secrets Manager. Nunca en el repositorio.
+- Las claves van en variables de entorno del proveedor de hosting (staging: Render). Nunca en el repositorio.
 - Los webhooks verifican la firma del proveedor y son idempotentes.
 - Las respuestas de los proveedores (por ejemplo, el id de un informe de Checkr) se guardan cifradas como referencia de evidencia, no como copia del informe.
 - Ningún estado de verificación se marca como "superado" sin una referencia real del proveedor o del staff.
@@ -27,5 +27,5 @@ Estado actual: **Stripe (modo de prueba) conectado** para las cuentas de cobro d
 - **Idempotencia:** los IDs de evento se guardan en `stripe_events`. Una reentrega no se aplica dos veces. Si el procesamiento falla, se borra el ID para que Stripe reintente.
 - **Eventos usados:** `v2.core.account.*` (estado de cobros del cuidador) y `checkout.session.completed` / `checkout.session.async_payment_succeeded` (reserva pagada aunque la familia no vuelva a la app).
 - **Sin cabecera Origin:** esta ruta está exenta de la comprobación de origen en staging y producción; la autentica la firma.
-- **Pendiente (requiere infraestructura):** registrar los destinos en el panel de Stripe. Stripe solo puede enviar avisos a una URL pública, y la app aún no está publicada (AWS). Hasta entonces, el estado se actualiza al volver de Stripe o al abrir la pantalla de Cobros.
+- **Pendiente (requiere infraestructura):** registrar los destinos en el panel de Stripe. Stripe solo puede enviar avisos a una URL pública. En staging será `https://nuriva-staging-web.onrender.com/api/v1/webhooks/stripe` (la API es privada; el proxy de la app web reenvía el cuerpo sin cambios). Hasta entonces, el estado se actualiza al volver de Stripe o al abrir la pantalla de Cobros.
 - **Pregunta abierta:** si los dos destinos (thin y snapshot) tienen secretos distintos, habrá que aceptar varios secretos. Hoy se acepta uno.

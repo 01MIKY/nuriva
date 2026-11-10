@@ -48,5 +48,5 @@ DATABASE_URL=... pnpm --filter @nuriva/api create-staff --email tu@nuriva.com --
 |---|---|---|---|
 | development | local | generados en `.env` | demo |
 | test | CI | efímeros | se vacían en cada ejecución |
-| staging | pruebas con proveedores en sandbox | AWS Secrets Manager | demo, marcados como tal |
-| production | clientes reales | AWS Secrets Manager | reales |
+| staging | pruebas con proveedores en sandbox (Render, `docs/DEPLOY.md`) | variables de entorno de Render | demo, marcados como tal |
+| production | clientes reales | por decidir (Render o AWS) | reales |

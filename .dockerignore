@@ -1,0 +1,16 @@
+# Keep images small and free of local state and secrets.
+**/node_modules
+**/.next
+**/dist
+**/coverage
+**/*.tsbuildinfo
+.git
+.github
+.env
+.env.*
+!.env.example
+test-results
+playwright-report
+e2e
+docs
+*.log

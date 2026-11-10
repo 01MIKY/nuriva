@@ -1,0 +1,105 @@
+# NURIVA — STAGING (test version) on Render. See docs/DEPLOY.md and docs/adr/0004-staging-on-render.md.
+# Production gets its own reviewed Blueprint later; nothing here is production.
+#
+# Layout: the API is a PRIVATE service (no public URL). Visitors reach it only through the web and admin
+# apps' same-origin proxy (/api/v1/...), which also carries Stripe webhooks. The database accepts private-network
+# connections only.
+#
+# Approximate cost (render.com/pricing, checked 2026-11-10): 3 × $7 (0.5 CPU / 512 MB) + $19 Postgres (1 GB RAM)
+# + $0.30/GB storage ≈ $42/month on the Hobby workspace.
+
+previews:
+  generation: off
+
+services:
+  - type: pserv
+    name: nuriva-staging-api
+    runtime: docker
+    region: virginia
+    plan: 0.5c-512mb
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    autoDeployTrigger: checksPass # deploy main only after CI (typecheck, tests, e2e) passes
+    buildFilter:
+      paths: [apps/api/**, packages/**, pnpm-lock.yaml, package.json, pnpm-workspace.yaml, tsconfig.base.json]
+    preDeployCommand: node_modules/.bin/tsx packages/db/src/migrate.ts
+    envVars:
+      - key: NURIVA_ENV
+        value: staging
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nuriva-staging-db
+          property: connectionString
+      # Field encryption: Render generates one random 256-bit key on first creation and never changes it.
+      # Losing it makes encrypted fields unreadable — keep a copy in the owner's password manager.
+      - key: NURIVA_DATA_KEY
+        generateValue: true
+      - key: NURIVA_DATA_KEY_ID
+        value: stg1
+      # Must match the public URLs Render assigns (verify after the first deploy; see docs/DEPLOY.md).
+      - key: APP_ORIGINS
+        value: https://nuriva-staging-web.onrender.com,https://nuriva-staging-admin.onrender.com
+      - key: WEB_ORIGIN
+        value: https://nuriva-staging-web.onrender.com
+      - key: TRUSTED_PROXY_HOPS
+        value: 1
+      # Test version: requests work end to end without charging cards.
+      - key: BOOKINGS_ENABLED
+        value: "true"
+      - key: PAYMENTS_ENABLED
+        value: "false"
+      # Stripe TEST secret key (sk_test_…). Entered by the owner in the Render dashboard, never committed.
+      - key: STRIPE_SECRET_KEY
+        sync: false
+
+  - type: web
+    name: nuriva-staging-web
+    runtime: docker
+    region: virginia
+    plan: 0.5c-512mb
+    dockerfilePath: ./apps/web/Dockerfile
+    dockerContext: .
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths: [apps/web/**, packages/**, pnpm-lock.yaml, package.json, pnpm-workspace.yaml, tsconfig.base.json]
+    healthCheckPath: /api/healthz
+    envVars:
+      - key: NURIVA_ENV
+        value: staging
+      - key: API_ORIGIN
+        fromService:
+          type: pserv
+          name: nuriva-staging-api
+          property: hostport
+
+  - type: web
+    name: nuriva-staging-admin
+    runtime: docker
+    region: virginia
+    plan: 0.5c-512mb
+    dockerfilePath: ./apps/admin/Dockerfile
+    dockerContext: .
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths: [apps/admin/**, packages/**, pnpm-lock.yaml, package.json, pnpm-workspace.yaml, tsconfig.base.json]
+    healthCheckPath: /api/healthz
+    envVars:
+      - key: NURIVA_ENV
+        value: staging
+      - key: API_ORIGIN
+        fromService:
+          type: pserv
+          name: nuriva-staging-api
+          property: hostport
+
+databases:
+  - name: nuriva-staging-db
+    region: virginia
+    plan: 0.5c-1g
+    postgresMajorVersion: "16" # same major version as CI and local tests
+    diskSizeGB: 5
+    databaseName: nuriva_staging
+    user: nuriva_staging
+    ipAllowList: [] # private network only: no connections from the internet

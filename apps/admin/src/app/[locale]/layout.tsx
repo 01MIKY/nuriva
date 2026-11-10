@@ -39,6 +39,7 @@ export default async function AdminLayout({ children, params }: { children: Reac
   return (
     <html lang={locale} className={`${display.variable} ${body.variable}`}>
       <body className="admin">
+        {process.env.NURIVA_ENV === 'staging' && <div className="staging-banner" role="note">{t('staging.banner')}</div>}
         <header className="admin-bar">
           <div className="admin-bar-inner">
             <Link href={`/${locale}/caregivers`} className="admin-brand"><LogoMark size={28} inverted /><span>{t('admin.title')}</span></Link>

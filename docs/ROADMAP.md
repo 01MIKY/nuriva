@@ -65,8 +65,9 @@ Requiere: claves de prueba de Twilio y Postmark.
 - [ ] Admin completo: pagos, reembolsos, disputas, moderación, informes
 
 ## Fase 6: preparación del lanzamiento
-Requiere: cuenta AWS, abogado y presupuesto de pentest.
-- [ ] Infraestructura AWS (staging y producción)
+Requiere: abogado y presupuesto de pentest.
+- [x] Configuración de staging en Render (`render.yaml`); falta crear la cuenta
+- [ ] Infraestructura de producción (Render o AWS)
 - [ ] Pentest externo, accesibilidad WCAG 2.2 AA, pruebas de carga
 - [ ] Firma legal (`docs/COMPLIANCE.md`)
 - [ ] Piloto controlado en Miami
@@ -83,4 +84,4 @@ Requiere: cuenta AWS, abogado y presupuesto de pentest.
 | Claves de staging de Checkr (requiere verificar la empresa) | Fase 2 | empieza ya el trámite |
 | Claves de prueba de Twilio y Postmark | Fase 4 | antes de la Fase 4 |
 | Abogado laboral y de cumplimiento en Florida | Lanzamiento | empieza ya; es lo más lento |
-| Cuenta AWS | Fase 6 | antes de la Fase 6 |
+| Cuenta de Render (staging) | Versión de prueba | ahora |

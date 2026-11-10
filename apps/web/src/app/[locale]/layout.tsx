@@ -23,6 +23,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     alternates: { languages: { en: '/en', es: '/es' } },
     icons: { icon: '/icon.svg' },
     manifest: '/manifest.webmanifest',
+    // The test deployment must never be indexed by search engines.
+    ...(process.env.NURIVA_ENV === 'staging' ? { robots: { index: false, follow: false } } : {}),
   };
 }
 
@@ -41,6 +43,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
     <html lang={locale} className={`${display.variable} ${body.variable}`}>
       <body>
         <a className="skip-link" href="#main">{t('web.nav.skip')}</a>
+        {process.env.NURIVA_ENV === 'staging' && <div className="staging-banner" role="note">{t('staging.banner')}</div>}
         <header className="site-header">
           <div className="n-container site-header-inner">
             <Link href={`/${locale}`} aria-label="NURIVA"><Logo size={30} /></Link>

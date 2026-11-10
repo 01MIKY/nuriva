@@ -55,3 +55,4 @@ body.admin { background: var(--bg); }
 .comp-list { background: var(--surface); border-radius: var(--r-lg); border: 1px solid var(--line); padding: 4px 16px; }
 
 .row-urgent td { background: color-mix(in srgb, var(--n-danger) 8%, transparent); }
+.staging-banner { background: #FFE8A3; color: #3A2A00; text-align: center; font: 600 0.85rem/1.4 var(--f-body); padding: 6px 16px; }

@@ -2,6 +2,7 @@
 export const en = {
   brand: { name: 'NURIVA', tagline: 'Care you can trust', network: 'International Care Network' },
   divisions: { kids: 'NURIVA Kids', pets: 'NURIVA Pets' },
+  staging: { banner: "Test version of NURIVA. Don't enter real personal or payment details — data may be deleted." },
   services: {
     occasional: 'Occasional care',
     scheduled: 'Scheduled care',

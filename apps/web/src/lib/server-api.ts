@@ -1,17 +1,17 @@
 import 'server-only';
 import { cookies, headers } from 'next/headers';
 import type { Locale } from '@nuriva/i18n';
+import { apiOrigin, clientIp } from './upstream';
 
-const API_ORIGIN = process.env.API_ORIGIN ?? 'http://localhost:4000';
 
 /** Server-side call to the API, forwarding the visitor's session cookie. Never cached. */
 export async function apiGet<T>(path: string, locale: Locale): Promise<{ status: number; body: T | null }> {
   const jar = await cookies();
   const incoming = await headers();
   // Pass the visitor's IP so the API rate-limits and audits per person, not per web server.
-  const fwd = incoming.get('x-forwarded-for');
+  const fwd = clientIp(incoming);
   try {
-    const res = await fetch(`${API_ORIGIN}${path}`, {
+    const res = await fetch(`${apiOrigin()}${path}`, {
       headers: { cookie: jar.toString(), 'accept-language': locale, ...(fwd ? { 'x-forwarded-for': fwd } : {}) },
       cache: 'no-store',
     });

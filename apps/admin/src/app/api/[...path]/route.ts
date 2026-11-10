@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server';
+import { apiOrigin, clientIp } from '@/lib/upstream';
 
 /**
  * Same-origin proxy: browser → /api/v1/... → API. Keeps the session cookie first-party and lets one
@@ -15,15 +16,14 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
   if (path[0] !== 'v1' || path.some((p) => p === '..' || p.includes('/'))) {
     return Response.json({ error: 'not_found', message: 'Not found' }, { status: 404 });
   }
-  const origin = process.env.API_ORIGIN ?? 'http://localhost:4000';
-  const target = `${origin}/${path.map(encodeURIComponent).join('/')}${req.nextUrl.search}`;
+  const target = `${apiOrigin()}/${path.map(encodeURIComponent).join('/')}${req.nextUrl.search}`;
 
   const headers = new Headers();
   for (const h of FORWARD_REQUEST_HEADERS) {
     const v = req.headers.get(h);
     if (v) headers.set(h, v);
   }
-  const ip = req.headers.get('x-forwarded-for');
+  const ip = clientIp(req.headers);
   if (ip) headers.set('x-forwarded-for', ip);
 
   // Forward a body only when there is one: an empty string would make fetch add a text/plain
