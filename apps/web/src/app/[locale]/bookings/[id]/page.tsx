@@ -7,6 +7,7 @@ import { resolveLocale, translator } from '@/lib/i18n';
 import { apiGet, type Me } from '@/lib/server-api';
 import { formatRange, statusTone, type BookingView } from '@/lib/bookings';
 import { BookingActions } from '@/components/BookingActions';
+import { BackupPanel } from '@/components/BackupPanel';
 import { PaymentPanel } from '@/components/PaymentPanel';
 import { ChatPanel, IncidentPanel, ReviewPanel, TimelinePanel } from '@/components/ServicePanels';
 
@@ -37,6 +38,9 @@ export default async function BookingDetail({ params, searchParams }: { params: 
       {b.series && <p className="series-tag">↻ {t('web.bookings.seriesInfo', { i: b.series.index, n: b.series.count })}</p>}
       {!isCg && b.caregiver.publicId && (b.status === 'completed' || b.status === 'cancelled') && (
         <Link className={buttonClass('primary')} href={`/${locale}/book/${b.caregiver.publicId}?again=${b.id}`}>{t('web.book.again')}</Link>
+      )}
+      {!isCg && new Date(b.startAt).getTime() > Date.now() && (b.status === 'declined' || (b.status === 'cancelled' && b.cancelledBy === 'caregiver')) && (
+        <BackupPanel locale={locale} booking={b} />
       )}
       <Card>
         <dl className="kv">

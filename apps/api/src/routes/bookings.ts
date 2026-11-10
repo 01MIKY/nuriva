@@ -1,11 +1,11 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { and, desc, eq, gt, inArray, lt, sql } from 'drizzle-orm';
-import { bookings, bookingSeries, dependents, users, caregiverProfiles } from '@nuriva/db';
+import { bookings, bookingSeries, dependents, users, caregiverProfiles, reviews } from '@nuriva/db';
 import { applicationFeeCents, cancellationRefund } from '@nuriva/domain';
 import {
   DIVISIONS, DomainError, MULTI_DAY_SERVICES, SERIES_MAX_WEEKS, SERIES_MIN_WEEKS, SLOT_HOLDING, assertTransition, contactRevealed, fitsAvailability, publicName,
-  quote, validateSchedule, weeklyDates, zonedToUtc, type BookingStatus, type Division, type Service,
+  initialsOf, quote, validateSchedule, weeklyDates, zonedToUtc, type BookingStatus, type Division, type Service,
 } from '@nuriva/domain';
 import type { Deps } from '../lib/context.js';
 import { audit } from '../lib/audit.js';
@@ -109,6 +109,7 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
       payment: { status: row.paymentStatus, paidCents: row.paidCents, refundedCents: row.refundedCents, paidAt: row.paidAt },
       paymentsEnabled: deps.config.paymentsEnabled,
       series: s,
+      cancelledBy: row.cancelledBy === null ? null : row.cancelledBy === row.clientId ? 'client' : row.cancelledBy === row.caregiverId ? 'caregiver' : 'staff',
     };
   }
 
@@ -272,6 +273,44 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
     const [cur] = await db.select().from(bookings).where(eq(bookings.id, row.id));
     return { booking: await present(cur!, role), changed };
   }
+  /**
+   * Backup guarantee: when the caregiver declines or cancels a visit that has not started, the family sees other
+   * listed caregivers who can take the SAME service at the SAME time (availability fits, no overlapping booking).
+   * Only public card data is returned, exactly as in search.
+   */
+  app.get('/bookings/:id/alternatives', { preHandler: requireRole('client') }, async (req) => {
+    const { id } = IdParam.parse(req.params);
+    const { row } = await loadFor(req, id);
+    const byCaregiver = row.status === 'declined' || (row.status === 'cancelled' && row.cancelledBy === row.caregiverId);
+    if (!byCaregiver || row.startAt.getTime() <= Date.now()) return { alternatives: [] };
+    const division = row.division as Division;
+    const multiDay = MULTI_DAY_SERVICES.has(row.service as Service);
+    const [rows, active] = await Promise.all([loadCandidates(deps), activeServices(deps)]);
+    const vetting = await vettingFor(deps, rows.map((r) => r.userId));
+    const listed = rows.filter((r) => r.userId !== row.caregiverId
+      && isListed(r, division, vetting.get(r.userId), active, deps.config.paymentsEnabled)
+      && bookableServices(r, division, active).includes(row.service));
+    const free: typeof listed = [];
+    for (const r of listed) {
+      if (!fitsAvailability(await loadAvailability(deps, r.userId), row.startAt, row.endAt, { multiDay })) continue;
+      const clash = await db.select({ id: bookings.id }).from(bookings).where(and(
+        eq(bookings.caregiverId, r.userId), inArray(bookings.status, [...SLOT_HOLDING]), lt(bookings.startAt, row.endAt), gt(bookings.endAt, row.startAt),
+      )).limit(1);
+      if (!clash.length) free.push(r);
+    }
+    const ids = free.map((r) => r.userId);
+    const rated = ids.length ? await db.select({ cg: reviews.caregiverId, avg: sql<number>`round(avg(${reviews.rating})::numeric, 1)::float`, count: sql<number>`count(*)::int` })
+      .from(reviews).where(and(inArray(reviews.caregiverId, ids), eq(reviews.hidden, false))).groupBy(reviews.caregiverId) : [];
+    const rating = new Map(rated.map((x) => [x.cg, { avg: x.avg, count: x.count }]));
+    const score = (r: (typeof free)[number]) => (rating.get(r.userId)?.avg ?? 0) * 10 + r.yearsExperience;
+    return {
+      alternatives: free.sort((a, b) => score(b) - score(a)).slice(0, 5).map((r) => ({
+        id: r.publicId, displayName: publicName(r.name), initials: initialsOf(r.name), headline: r.headline,
+        hourlyRateCents: r.hourlyRateCents, yearsExperience: r.yearsExperience, languages: r.languages, rating: rating.get(r.userId) ?? null,
+      })),
+    };
+  });
+
   app.post('/bookings/:id/series/accept', cg, (req) => seriesAction(req, 'accepted'));
   app.post('/bookings/:id/series/decline', cg, (req) => seriesAction(req, 'declined'));
   app.post('/bookings/:id/series/cancel', { preHandler: requireRole('client', 'caregiver') }, (req) => {

@@ -14,6 +14,7 @@ export interface BookingView {
   paymentsEnabled: boolean;
   /** Weekly booking position, or null for a single booking. */
   series: { id: number; index: number; count: number } | null;
+  cancelledBy: 'client' | 'caregiver' | 'staff' | null;
 }
 
 /** Half-hour options for time pickers. */

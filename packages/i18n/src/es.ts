@@ -299,6 +299,16 @@ export const es: Catalog = {
       none: 'Aún no has indicado tu disponibilidad',
       summary: 'Disponible',
     },
+    backup: {
+      title: 'Garantía de suplente',
+      sorry: '{name} no puede ir a esta reserva.',
+      refunded: 'Te devolvemos el 100 % de lo que pagaste por ella.',
+      noCharge: 'No se te cobra nada por ella.',
+      intro: 'Estos cuidadores verificados están libres a la misma hora:',
+      bookSameTime: 'Reservar a la misma hora',
+      none: 'Ahora mismo no hay otros cuidadores libres a esa hora. Prueba con otro horario.',
+      searchOther: 'Buscar cuidadores',
+    },
     favorites: {
       title: 'Tus cuidadores favoritos',
       intro: 'Guarda a los cuidadores en los que confías y vuelve a reservarlos en pocos pasos.',
@@ -313,6 +323,7 @@ export const es: Catalog = {
     },
     book: {
       again: 'Reservar de nuevo',
+      prefilledBackup: 'Copiamos los datos y la hora de tu reserva anterior. Revisa que todo esté bien y envía la solicitud.',
       repeat: 'Repetir cada semana',
       repeatHint: 'Mismo día y hora con el mismo cuidador. Cada visita es una reserva aparte que puedes cancelar por separado.',
       repeatWeeks: 'Durante cuántas semanas',

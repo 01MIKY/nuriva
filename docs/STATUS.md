@@ -12,6 +12,7 @@
 | D4 | Sandbox: Stripe Connect + Identity, Checkr, Twilio + Postmark | Aprobado. **Stripe (prueba) conectado**; faltan Checkr, Twilio y Postmark |
 | D5 | Modelo legal | Recomendación: marketplace. **Pendiente de abogado** |
 | D6 | Repositorio GitHub | Hecho: `01MIKY/nuriva` (privado) |
+| D7 | **Kids primero**; Pets como complemento. Estrategia de retención en `docs/RETENTION.md` | Aprobado (10 nov 2026) |
 
 ## Fase 1 — Cimientos
 
@@ -47,6 +48,7 @@
 | Retención · favoritos: las familias guardan cuidadores con un corazón en el perfil y los ven en "Favoritos". Solo se pueden guardar cuidadores visibles; si alguno deja de estarlo, aparece como "No disponible por ahora" sin datos de perfil | Hecho | 4 API + 1 e2e |
 | Retención · reservar de nuevo: desde una reserva terminada o cancelada se copian servicio, niños, horario, dirección y notas, y solo se elige la fecha. El cuidador nunca ve los identificadores internos | Hecho | (mismos tests) |
 | Retención · reservas semanales: la misma cuidadora, el mismo día y hora, de 2 a 12 semanas. Cada visita es una reserva normal (pago, llegada y cancelación propios). Se crean todas o ninguna, y si alguna semana está ocupada se indica cuál. La cuidadora acepta o rechaza todas a la vez, y cualquiera de las partes puede cancelar "esta y las siguientes" aplicando la política a cada visita | Hecho | 3 dominio + 6 API + 1 e2e |
+| Retención · garantía de suplente: si el cuidador rechaza o cancela una visita que no ha empezado, la familia ve otros cuidadores verificados libres a la misma hora y reserva con todos los datos y la hora ya copiados. Devolución del 100 % si había pago (política vigente) | Hecho | 2 API + 1 e2e |
 | **Pendiente en pagos:** probar el pago completo con tarjeta de prueba en navegador contra Stripe real; decidir quién absorbe la comisión de Stripe (ADR 0003); aceptar varios secretos de webhook si hiciera falta | Pendiente | — |
 | Publicación de prueba en Render: `render.yaml` (API privada, web, admin y PostgreSQL privado), imágenes Docker, migraciones antes de cada despliegue, solo tras CI en verde, aviso "versión de prueba" y `noindex`, IP del visitante no falsificable. Probado en local con Docker en modo staging (migraciones, registro, cookies seguras, origen, MFA obligatoria) | Listo para publicar; **falta la cuenta de Render** del propietario | 5 config + 2 e2e |
 | Infraestructura de producción | Pendiente: decidir Render o AWS antes del lanzamiento | — |

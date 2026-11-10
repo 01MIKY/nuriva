@@ -21,6 +21,8 @@ interface Props {
 
 export interface BookingDraft {
   division: 'kids' | 'pets'; service: string; dependentIds: number[]; start: string; end: string; address: string; notes: string;
+  /** Set only for the backup guarantee (same time with another caregiver). */
+  date?: string;
 }
 
 const minutesOf = (hhmm: string) => (hhmm === '24:00' ? 1440 : Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3)));
@@ -34,7 +36,7 @@ export function BookingForm({ locale, caregiver, household, windows, minDate, pa
   const [selected, setSelected] = useState<number[]>(initial?.dependentIds ?? []);
   const [start, setStart] = useState(initial?.start ?? '18:00');
   const [end, setEnd] = useState(initial?.end ?? '22:00');
-  const [date, setDate] = useState('');
+  const [date, setDate] = useState(initial?.date ?? '');
   const [repeat, setRepeat] = useState(false);
   const [weeks, setWeeks] = useState(4);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -93,7 +95,7 @@ export function BookingForm({ locale, caregiver, household, windows, minDate, pa
   return (
     <div className="book-grid">
       <form className="n-stack" onSubmit={submit} noValidate aria-label={tr('web.book.title', { name: caregiver.displayName })} style={{ ['--gap' as string]: '18px' }}>
-        {initial && <Alert>{tr('web.book.prefilled')}</Alert>}
+        {initial && <Alert>{tr(initial.date ? 'web.book.prefilledBackup' : 'web.book.prefilled')}</Alert>}
         <div ref={errorRef}>{formError && <Alert tone="error">{formError}</Alert>}</div>
 
         {caregiver.divisions.length > 1 && (

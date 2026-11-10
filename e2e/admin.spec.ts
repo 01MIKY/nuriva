@@ -122,13 +122,22 @@ test('staff review and approve a caregiver end to end', async ({ browser }) => {
   await root.goto(`${ADMIN}/en/compliance`);
   const kids = root.getByRole('region', { name: 'NURIVA Kids' });
   await expect(kids.locator('.comp-row', { hasText: 'Special-needs care' }).getByText('Counsel review recommended')).toBeVisible();
-  await kids.getByRole('button', { name: 'Activate: Occasional care' }).click();
-  const act = kids.getByRole('form', { name: 'Activate: Occasional care' });
+  // The register is shared by every test running in parallel, so this one uses a service no other test touches,
+  // exact names ("Activate" is a substring of "Deactivate") and works whatever state it starts in.
+  const pickup = kids.locator('.comp-row', { hasText: 'School pick-up' });
+  if (await pickup.getByRole('button', { name: 'Deactivate: School pick-up', exact: true }).count()) {
+    await pickup.getByRole('button', { name: 'Deactivate: School pick-up', exact: true }).click();
+    const off = pickup.getByRole('form', { name: 'Deactivate: School pick-up', exact: true });
+    await off.getByLabel('Compliance reference').fill(`RESET-${run}`);
+    await off.getByRole('button', { name: 'Deactivate', exact: true }).click();
+    await expect(pickup.getByText('Inactive', { exact: true })).toBeVisible();
+  }
+  await pickup.getByRole('button', { name: 'Activate: School pick-up', exact: true }).click();
+  const act = pickup.getByRole('form', { name: 'Activate: School pick-up', exact: true });
   await act.getByLabel('Compliance reference').fill(`LEGAL-MEMO-${run}`);
-  await act.getByRole('button', { name: 'Activate' }).click();
-  const occasional = kids.locator('.comp-row', { hasText: 'Occasional care' });
-  await expect(occasional.getByText('Active', { exact: true })).toBeVisible();
-  await expect(occasional.getByText(`Last change: LEGAL-MEMO-${run}`)).toBeVisible();
+  await act.getByRole('button', { name: 'Activate', exact: true }).click();
+  await expect(pickup.getByText('Active', { exact: true })).toBeVisible();
+  await expect(pickup.getByText(`Last change: LEGAL-MEMO-${run}`)).toBeVisible();
 
   // Audit log (Trust & Safety) shows what happened
   await ts.goto(`${ADMIN}/es/audit`);

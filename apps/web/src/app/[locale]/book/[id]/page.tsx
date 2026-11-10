@@ -13,9 +13,9 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const metadata: Metadata = { robots: { index: false } };
 
-export default async function BookPage({ params, searchParams }: { params: Promise<{ locale: string; id: string }>; searchParams: Promise<{ again?: string }> }) {
+export default async function BookPage({ params, searchParams }: { params: Promise<{ locale: string; id: string }>; searchParams: Promise<{ again?: string; sameTime?: string }> }) {
   const { id } = await params;
-  const { again } = await searchParams;
+  const { again, sameTime } = await searchParams;
   const locale = await resolveLocale(params);
   const t = translator(locale);
   if (!UUID.test(id)) notFound();
@@ -39,7 +39,7 @@ export default async function BookPage({ params, searchParams }: { params: Promi
     apiGet<Household>('/v1/household', locale),
     apiGet<{ windows: Window[] }>(`/v1/caregivers/${id}/availability`, locale),
   ]);
-  const initial = again && /^\d+$/.test(again) ? await draftFrom(again, id, household.body?.dependents ?? [], locale) : undefined;
+  const initial = again && /^\d+$/.test(again) ? await draftFrom(again, id, household.body?.dependents ?? [], locale, sameTime === '1') : undefined;
   // Earliest selectable date: tomorrow in Miami (same-day requests still need ≥1 h lead time, checked by the API).
   const tomorrow = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date(Date.now() + 86400_000));
 
@@ -67,10 +67,14 @@ const localTime = (iso: string) => new Intl.DateTimeFormat('en-GB', { timeZone: 
  * "Book again": copies service, people, times, address and notes from one of the family's own bookings with
  * this caregiver. The API only returns the booking to its own parties, and anything that no longer applies
  * (a child removed from the household, a time that is not a half hour) is simply left out.
+ * Backup guarantee (`backup`): the original caregiver declined or cancelled, so the details AND the date are
+ * copied into a request to another caregiver.
  */
-async function draftFrom(bookingId: string, caregiverId: string, household: Array<{ id: number; kind: 'child' | 'pet'; name: string }>, locale: 'en' | 'es'): Promise<BookingDraft | undefined> {
+async function draftFrom(bookingId: string, caregiverId: string, household: Array<{ id: number; kind: 'child' | 'pet'; name: string }>, locale: 'en' | 'es', backup = false): Promise<BookingDraft | undefined> {
   const b = (await apiGet<{ booking: BookingView }>(`/v1/bookings/${bookingId}`, locale)).body?.booking;
-  if (!b || b.viewerRole !== 'client' || b.caregiver.publicId !== caregiverId) return undefined;
+  if (!b || b.viewerRole !== 'client') return undefined;
+  const caregiverCouldNotGo = b.status === 'declined' || (b.status === 'cancelled' && b.cancelledBy === 'caregiver');
+  if (backup ? !caregiverCouldNotGo : b.caregiver.publicId !== caregiverId) return undefined;
   const ids = b.dependents.flatMap((d) => {
     const match = household.find((h) => h.kind === d.kind && (d.id ? h.id === d.id : h.name === d.name));
     return match ? [match.id] : [];
@@ -83,5 +87,6 @@ async function draftFrom(bookingId: string, caregiverId: string, household: Arra
     division: b.division, service: b.service, dependentIds: [...new Set(ids)],
     start: valid(start) ? start : '18:00', end: valid(end) ? end : '22:00',
     address: b.address ?? '', notes: b.notes ?? '',
+    ...(backup ? { date: new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date(b.startAt)) } : {}),
   };
 }

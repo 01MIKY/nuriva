@@ -267,3 +267,6 @@ a.toggle-chip { text-decoration: none; }
 .check-row { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
 .check-row input { width: 22px; height: 22px; margin-top: 2px; flex: none; accent-color: var(--primary); }
 .series-tag { font-size: 0.8rem; font-weight: 700; color: var(--n-sage-ink); }
+/* Backup guarantee */
+.backup-card { border: 1.5px solid var(--n-sage); }
+.backup-option { padding: 10px 0; border-top: 1px solid var(--line); }

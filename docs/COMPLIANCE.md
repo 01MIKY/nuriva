@@ -31,6 +31,12 @@
   - cómo informarlo sin dar asesoría fiscal;
   - si la recurrencia afecta a la clasificación de la cuidadora como independiente (D5).
 
+- **Retención y "no contratar por fuera"** (`docs/RETENTION.md`). Para el abogado:
+  - si en Florida se puede aplicar una cláusula de no elusión ("las relaciones iniciadas en NURIVA se pagan por NURIVA durante X meses") y una tarifa de colocación para contratar a la cuidadora como niñera fija;
+  - cómo redactar la "garantía de suplente" sin que sea una promesa engañosa ante la FTC. Hoy la app solo promete devolver el pago y mostrar alternativas, nunca un reemplazo seguro;
+  - qué beneficios para cuidadores (niveles, comisión decreciente, formación) se pueden ofrecer como **opcionales** sin aumentar el "control" en el análisis de clasificación (D5);
+  - qué deben incluir los recibos para la cuenta FSA de cuidado de dependientes (con un contador).
+
 ## Cómo lo aplica el software
 - **Minimización de datos de menores:** solo nombre o apodo y edad en años. Sin fecha de nacimiento, fotos ni colegio. Todo cifrado y visible solo para el dueño (y en el futuro, para el cuidador de una reserva aceptada). Pregunta para el abogado: retención y borrado de estos datos al cerrar la cuenta.
 - **Gate de servicios:** ningún servicio se puede reservar sin una fila activa en `service_activations` con `compliance_ref` (referencia al documento de aprobación) creada por un superadmin. Cada cambio queda auditado.

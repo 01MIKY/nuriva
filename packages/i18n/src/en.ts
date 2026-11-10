@@ -297,6 +297,16 @@ export const en = {
       none: 'No availability set yet',
       summary: 'Available',
     },
+    backup: {
+      title: 'Backup guarantee',
+      sorry: '{name} cannot make this booking.',
+      refunded: 'Everything you paid for it is refunded in full.',
+      noCharge: 'You are not charged anything for it.',
+      intro: 'These verified caregivers are free at the same time:',
+      bookSameTime: 'Book for the same time',
+      none: 'No other caregivers are free at that time right now. Try another time.',
+      searchOther: 'Search caregivers',
+    },
     favorites: {
       title: 'Your favorite caregivers',
       intro: 'Save the caregivers you trust and book them again in a few taps.',
@@ -311,6 +321,7 @@ export const en = {
     },
     book: {
       again: 'Book again',
+      prefilledBackup: 'We copied the details and time of your previous booking. Check everything and send the request.',
       repeat: 'Repeat every week',
       repeatHint: 'Same day and time with the same caregiver. Each visit is a separate booking you can cancel on its own.',
       repeatWeeks: 'For how many weeks',
