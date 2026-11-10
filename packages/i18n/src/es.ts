@@ -104,7 +104,7 @@ export const es: Catalog = {
   },
   common: { save: 'Guardar', cancel: 'Cancelar', continue: 'Continuar', back: 'Atrás', perHour: '{amount}/hora' },
   web: {
-    nav: { skip: 'Saltar al contenido', kids: 'Kids', pets: 'Pets', howItWorks: 'Cómo funciona', safety: 'Seguridad', becomeCaregiver: 'Trabaja como cuidador', bookings: 'Reservas', account: 'Mi cuenta', language: 'English' },
+    nav: { skip: 'Saltar al contenido', kids: 'Kids', pets: 'Pets', howItWorks: 'Cómo funciona', safety: 'Seguridad', becomeCaregiver: 'Trabaja como cuidador', bookings: 'Reservas', favorites: 'Favoritos', account: 'Mi cuenta', language: 'English' },
     home: {
       eyebrow: 'Empezamos en Miami',
       title: 'Cuidado de confianza para quienes más quieres',
@@ -297,7 +297,21 @@ export const es: Catalog = {
       none: 'Aún no has indicado tu disponibilidad',
       summary: 'Disponible',
     },
+    favorites: {
+      title: 'Tus cuidadores favoritos',
+      intro: 'Guarda a los cuidadores en los que confías y vuelve a reservarlos en pocos pasos.',
+      save: 'Guardar en favoritos',
+      saved: 'En tus favoritos',
+      empty: 'Aún no has guardado a nadie. Toca el corazón en el perfil de un cuidador para tenerlo aquí.',
+      findCta: 'Buscar cuidadores',
+      book: 'Reservar',
+      viewProfile: 'Ver perfil',
+      unavailable: 'No disponible por ahora',
+      remove: 'Quitar',
+    },
     book: {
+      again: 'Reservar de nuevo',
+      prefilled: 'Copiamos los datos de tu reserva anterior. Elige la nueva fecha y revisa que todo siga bien.',
       title: 'Solicitar una reserva con {name}',
       signInToBook: 'Inicia sesión para reservar',
       onlyFamilies: 'Solo las cuentas de familia pueden reservar.',

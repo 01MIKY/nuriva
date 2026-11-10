@@ -8,6 +8,7 @@ import {
 } from '@nuriva/domain';
 import type { Deps } from '../lib/context.js';
 import { loadAvailability } from './caregiver.js';
+import { isFavorite } from './favorites.js';
 
 const SearchQuery = z.object({
   division: z.enum(DIVISIONS),
@@ -140,6 +141,8 @@ export async function searchRoutes(app: FastifyInstance, deps: Deps) {
       },
       bookingsEnabled: deps.config.bookingsEnabled,
       paymentsEnabled: deps.config.paymentsEnabled,
+      // Only meaningful for a signed-in family; null for everyone else.
+      favorite: req.user?.role === 'client' ? await isFavorite(deps, req.user.id, row.userId) : null,
     };
   });
 

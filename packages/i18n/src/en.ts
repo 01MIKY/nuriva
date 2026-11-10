@@ -102,7 +102,7 @@ export const en = {
   },
   common: { save: 'Save', cancel: 'Cancel', continue: 'Continue', back: 'Back', perHour: '{amount}/hour' },
   web: {
-    nav: { skip: 'Skip to content', kids: 'Kids', pets: 'Pets', howItWorks: 'How it works', safety: 'Safety', becomeCaregiver: 'Become a caregiver', bookings: 'Bookings', account: 'My account', language: 'Español' },
+    nav: { skip: 'Skip to content', kids: 'Kids', pets: 'Pets', howItWorks: 'How it works', safety: 'Safety', becomeCaregiver: 'Become a caregiver', bookings: 'Bookings', favorites: 'Favorites', account: 'My account', language: 'Español' },
     home: {
       eyebrow: 'Now starting in Miami',
       title: 'Trusted care for the ones you love',
@@ -295,7 +295,21 @@ export const en = {
       none: 'No availability set yet',
       summary: 'Available',
     },
+    favorites: {
+      title: 'Your favorite caregivers',
+      intro: 'Save the caregivers you trust and book them again in a few taps.',
+      save: 'Save to favorites',
+      saved: 'In your favorites',
+      empty: "You haven't saved anyone yet. Tap the heart on a caregiver's profile to keep them here.",
+      findCta: 'Find caregivers',
+      book: 'Book',
+      viewProfile: 'View profile',
+      unavailable: 'Not available right now',
+      remove: 'Remove',
+    },
     book: {
+      again: 'Book again',
+      prefilled: 'We copied the details of your previous booking. Choose the new date and check everything is still right.',
       title: 'Request a booking with {name}',
       signInToBook: 'Sign in to book',
       onlyFamilies: 'Only family accounts can make bookings.',

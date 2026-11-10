@@ -8,7 +8,7 @@ export interface BookingView {
   price: { hourlyRateCents: number; subtotalCents: number; clientFeeCents: number; totalCents: number; estimate: boolean };
   caregiver: { displayName: string; publicId: string | null };
   client: { firstName: string };
-  dependents: Array<{ kind: 'child' | 'pet'; name?: string; details: Record<string, string | number> }>;
+  dependents: Array<{ id?: number; kind: 'child' | 'pet'; name?: string; details: Record<string, string | number> }>;
   address: string | null; notes: string | null; detailsRevealed: boolean; viewerRole: 'client' | 'caregiver';
   payment: { status: 'none' | 'pending' | 'paid' | 'refunded' | 'partially_refunded'; paidCents: number; refundedCents: number };
   paymentsEnabled: boolean;

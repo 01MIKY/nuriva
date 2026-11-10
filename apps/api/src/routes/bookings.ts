@@ -31,7 +31,8 @@ const CancelBody = z.object({ reason: z.string().trim().max(300).optional() }).s
 const CheckoutBody = z.object({ locale: z.enum(['en', 'es']).default('es') }).strict();
 const ConfirmBody = z.object({ sessionId: z.string().min(10).max(255) }).strict();
 
-interface DependentSnapshot { kind: 'child' | 'pet'; name: string; details: Record<string, unknown> }
+/** `id` (household dependent id, kept since Nov 2026) lets the family book again; never shown to the caregiver. */
+interface DependentSnapshot { id?: number; kind: 'child' | 'pet'; name: string; details: Record<string, unknown> }
 
 const nextDay = (date: string) => {
   const d = new Date(`${date}T12:00:00Z`);
@@ -73,8 +74,10 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
       price: { hourlyRateCents: row.hourlyRateCents, subtotalCents: row.subtotalCents, clientFeeCents: row.clientFeeCents, totalCents: row.totalCents, estimate: true },
       caregiver: { displayName: publicName(cg?.name ?? ''), publicId: cg?.publicId ?? null },
       client: { firstName: (client?.name ?? '').split(' ')[0] ?? '' },
-      dependents: revealed
+      dependents: role === 'client'
         ? snap
+        : revealed
+        ? snap.map(({ id: _id, ...d }) => d)
         : snap.map((d) => ({ kind: d.kind, details: d.kind === 'child' ? { ageYears: d.details.ageYears } : { species: d.details.species, ageYears: d.details.ageYears } })),
       address: revealed ? cipher.decrypt(row.addressEnc) : null,
       notes: revealed && row.notesEnc ? cipher.decrypt(row.notesEnc) : null,
@@ -107,7 +110,7 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
     if (deps_.length !== new Set(b.dependentIds).size || deps_.some((d) => d.kind !== kind)) {
       throw new DomainError('invalid_dependents', 'Invalid selection', 400);
     }
-    const snapshot: DependentSnapshot[] = deps_.map((d) => ({ kind: d.kind, name: cipher.decrypt(d.displayNameEnc), details: cipher.decryptJson(d.detailsEnc) }));
+    const snapshot: DependentSnapshot[] = deps_.map((d) => ({ id: d.id, kind: d.kind, name: cipher.decrypt(d.displayNameEnc), details: cipher.decryptJson(d.detailsEnc) }));
     const q = quote(row.hourlyRateCents, minutes);
 
     const created = await db.transaction(async (tx) => {

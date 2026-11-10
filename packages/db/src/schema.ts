@@ -282,3 +282,10 @@ export const incidents = pgTable('incidents', {
   createdAt: createdAt(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index('incidents_status_idx').on(t.status, t.createdAt)]);
+
+/** Caregivers a family saved so they can find and book them again quickly (retention, Kids first). */
+export const favorites = pgTable('favorites', {
+  clientId: fk('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  caregiverId: fk('caregiver_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: createdAt(),
+}, (t) => [primaryKey({ columns: [t.clientId, t.caregiverId] }), index('favorites_caregiver_idx').on(t.caregiverId)]);

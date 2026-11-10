@@ -53,6 +53,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
               <Link href={`/${locale}#how`} className="hide-sm">{t('web.nav.howItWorks')}</Link>
               <LanguageSwitch target={otherLocale(locale)} label={t('web.nav.language')} />
               {user && user.role !== 'admin' && <Link href={`/${locale}/bookings`} className="hide-sm">{t('web.nav.bookings')}</Link>}
+              {user?.role === 'client' && <Link href={`/${locale}/favorites`} className="hide-sm">{t('web.nav.favorites')}</Link>}
               {user
                 ? <Link href={`/${locale}/account`} className="n-btn n-btn-quiet nav-cta">{t('web.nav.account')}</Link>
                 : <Link href={`/${locale}/signin`} className="n-btn n-btn-quiet nav-cta">{t('auth.signIn')}</Link>}

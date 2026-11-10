@@ -6,12 +6,13 @@ import { formatMoney, type MessageKey } from '@nuriva/i18n';
 import { resolveLocale, translator } from '@/lib/i18n';
 import { apiGet, type Me } from '@/lib/server-api';
 import { avatarTint, type PublicProfile } from '@/lib/search';
+import { FavoriteButton } from '@/components/FavoriteButton';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function loadFull(id: string, locale: 'en' | 'es') {
   if (!UUID.test(id)) return null;
-  return (await apiGet<{ caregiver: PublicProfile; bookingsEnabled: boolean; paymentsEnabled?: boolean }>(`/v1/caregivers/${id}`, locale)).body ?? null;
+  return (await apiGet<{ caregiver: PublicProfile; bookingsEnabled: boolean; paymentsEnabled?: boolean; favorite?: boolean | null }>(`/v1/caregivers/${id}`, locale)).body ?? null;
 }
 const load = async (id: string, locale: 'en' | 'es') => (await loadFull(id, locale))?.caregiver ?? null;
 
@@ -105,6 +106,7 @@ export default async function CaregiverProfilePage({ params }: { params: Promise
           ) : (
             <p className="n-hint">{t('web.book.onlyFamilies')}</p>
           )}
+          {user?.role === 'client' && <FavoriteButton locale={locale} caregiverId={c.id} initial={full.favorite === true} />}
         </aside>
       </div>
     </div>

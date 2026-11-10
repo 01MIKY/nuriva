@@ -78,6 +78,13 @@
       "when": 1794267255468,
       "tag": "0010_service_messages_reviews_incidents",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794273209129,
+      "tag": "0011_favorites",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
-import { Alert, Badge, Card } from '@nuriva/ui';
+import { Alert, Badge, Card, buttonClass } from '@nuriva/ui';
 import { formatMoney, type MessageKey } from '@nuriva/i18n';
 import { resolveLocale, translator } from '@/lib/i18n';
 import { apiGet, type Me } from '@/lib/server-api';
@@ -34,6 +34,9 @@ export default async function BookingDetail({ params, searchParams }: { params: 
         <Badge tone={statusTone[b.status]}>{t(`bookingStatus.${b.status}`)}</Badge>
       </div>
       <p className="n-muted">{isCg ? t('web.bookings.from', { name: b.client.firstName }) : t('web.bookings.with', { name: b.caregiver.displayName })}</p>
+      {!isCg && b.caregiver.publicId && (b.status === 'completed' || b.status === 'cancelled') && (
+        <Link className={buttonClass('primary')} href={`/${locale}/book/${b.caregiver.publicId}?again=${b.id}`}>{t('web.book.again')}</Link>
+      )}
       <Card>
         <dl className="kv">
           <dt>{t('web.bookings.when')}</dt><dd>{formatRange(locale, b.startAt, b.endAt)}</dd>

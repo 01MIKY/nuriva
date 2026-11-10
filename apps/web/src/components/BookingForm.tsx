@@ -15,19 +15,25 @@ interface Props {
   windows: Window[];
   minDate: string;
   paymentsEnabled: boolean;
+  /** "Book again": details copied from a previous booking with this caregiver (the date is always chosen anew). */
+  initial?: BookingDraft;
+}
+
+export interface BookingDraft {
+  division: 'kids' | 'pets'; service: string; dependentIds: number[]; start: string; end: string; address: string; notes: string;
 }
 
 const minutesOf = (hhmm: string) => (hhmm === '24:00' ? 1440 : Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3)));
 
-export function BookingForm({ locale, caregiver, household, windows, minDate, paymentsEnabled }: Props) {
+export function BookingForm({ locale, caregiver, household, windows, minDate, paymentsEnabled, initial }: Props) {
   const tr = (k: MessageKey, v?: Record<string, string | number>) => t(locale, k, v);
   const router = useRouter();
-  const [division, setDivision] = useState(caregiver.divisions[0]!.division);
+  const [division, setDivision] = useState(initial?.division ?? caregiver.divisions[0]!.division);
   const services = caregiver.divisions.find((d) => d.division === division)?.services ?? [];
-  const [service, setService] = useState(services[0] ?? '');
-  const [selected, setSelected] = useState<number[]>([]);
-  const [start, setStart] = useState('18:00');
-  const [end, setEnd] = useState('22:00');
+  const [service, setService] = useState(initial && services.includes(initial.service) ? initial.service : services[0] ?? '');
+  const [selected, setSelected] = useState<number[]>(initial?.dependentIds ?? []);
+  const [start, setStart] = useState(initial?.start ?? '18:00');
+  const [end, setEnd] = useState(initial?.end ?? '22:00');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -78,6 +84,7 @@ export function BookingForm({ locale, caregiver, household, windows, minDate, pa
   return (
     <div className="book-grid">
       <form className="n-stack" onSubmit={submit} noValidate aria-label={tr('web.book.title', { name: caregiver.displayName })} style={{ ['--gap' as string]: '18px' }}>
+        {initial && <Alert>{tr('web.book.prefilled')}</Alert>}
         <div ref={errorRef}>{formError && <Alert tone="error">{formError}</Alert>}</div>
 
         {caregiver.divisions.length > 1 && (
@@ -126,10 +133,10 @@ export function BookingForm({ locale, caregiver, household, windows, minDate, pa
           </div>
         </div>
 
-        <Field label={tr('web.book.address')} name="address" autoComplete="street-address" hint={tr('web.book.addressHint')} error={errors.address} maxLength={200} />
+        <Field label={tr('web.book.address')} name="address" autoComplete="street-address" hint={tr('web.book.addressHint')} error={errors.address} maxLength={200} defaultValue={initial?.address} />
         <div className="n-field">
           <label className="n-label" htmlFor="bk-notes">{tr('web.book.notes')}</label>
-          <textarea id="bk-notes" name="notes" className="n-input n-textarea" maxLength={1000} />
+          <textarea id="bk-notes" name="notes" className="n-input n-textarea" maxLength={1000} defaultValue={initial?.notes} />
         </div>
         <Button type="submit" disabled={busy || options.length === 0}>{busy ? tr('web.auth.submitting') : tr('web.book.send')}</Button>
       </form>

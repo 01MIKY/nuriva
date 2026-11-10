@@ -6,15 +6,16 @@ import { resolveLocale, translator } from '@/lib/i18n';
 import { apiGet, type Me } from '@/lib/server-api';
 import type { PublicProfile } from '@/lib/search';
 import type { Household } from '@/lib/household';
-import type { Window } from '@/lib/bookings';
-import { BookingForm } from '@/components/BookingForm';
+import { HALF_HOURS, type BookingView, type Window } from '@/lib/bookings';
+import { BookingForm, type BookingDraft } from '@/components/BookingForm';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const metadata: Metadata = { robots: { index: false } };
 
-export default async function BookPage({ params }: { params: Promise<{ locale: string; id: string }> }) {
+export default async function BookPage({ params, searchParams }: { params: Promise<{ locale: string; id: string }>; searchParams: Promise<{ again?: string }> }) {
   const { id } = await params;
+  const { again } = await searchParams;
   const locale = await resolveLocale(params);
   const t = translator(locale);
   if (!UUID.test(id)) notFound();
@@ -38,6 +39,7 @@ export default async function BookPage({ params }: { params: Promise<{ locale: s
     apiGet<Household>('/v1/household', locale),
     apiGet<{ windows: Window[] }>(`/v1/caregivers/${id}/availability`, locale),
   ]);
+  const initial = again && /^\d+$/.test(again) ? await draftFrom(again, id, household.body?.dependents ?? [], locale) : undefined;
   // Earliest selectable date: tomorrow in Miami (same-day requests still need ≥1 h lead time, checked by the API).
   const tomorrow = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date(Date.now() + 86400_000));
 
@@ -52,7 +54,34 @@ export default async function BookPage({ params }: { params: Promise<{ locale: s
         windows={availability.body?.windows ?? []}
         minDate={tomorrow}
         paymentsEnabled={prof.paymentsEnabled === true}
+        initial={initial}
       />
     </div>
   );
+}
+
+/** Miami wall-clock "HH:MM" of an instant. */
+const localTime = (iso: string) => new Intl.DateTimeFormat('en-GB', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso));
+
+/**
+ * "Book again": copies service, people, times, address and notes from one of the family's own bookings with
+ * this caregiver. The API only returns the booking to its own parties, and anything that no longer applies
+ * (a child removed from the household, a time that is not a half hour) is simply left out.
+ */
+async function draftFrom(bookingId: string, caregiverId: string, household: Array<{ id: number; kind: 'child' | 'pet'; name: string }>, locale: 'en' | 'es'): Promise<BookingDraft | undefined> {
+  const b = (await apiGet<{ booking: BookingView }>(`/v1/bookings/${bookingId}`, locale)).body?.booking;
+  if (!b || b.viewerRole !== 'client' || b.caregiver.publicId !== caregiverId) return undefined;
+  const ids = b.dependents.flatMap((d) => {
+    const match = household.find((h) => h.kind === d.kind && (d.id ? h.id === d.id : h.name === d.name));
+    return match ? [match.id] : [];
+  });
+  const start = localTime(b.startAt);
+  const endRaw = localTime(b.endAt);
+  const end = endRaw === '00:00' ? '24:00' : endRaw;
+  const valid = (x: string) => x === '24:00' || HALF_HOURS.includes(x);
+  return {
+    division: b.division, service: b.service, dependentIds: [...new Set(ids)],
+    start: valid(start) ? start : '18:00', end: valid(end) ? end : '22:00',
+    address: b.address ?? '', notes: b.notes ?? '',
+  };
 }
