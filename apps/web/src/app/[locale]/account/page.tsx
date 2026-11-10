@@ -7,6 +7,7 @@ import type { VettingStep } from '@nuriva/domain';
 import { resolveLocale, translator } from '@/lib/i18n';
 import { apiGet, type Me } from '@/lib/server-api';
 import { SignOutButtons } from '@/components/SignOutButtons';
+import { LevelCard, type OwnReputation } from '@/components/Reputation';
 
 /** "2 hijos · 1 mascota" — singular/plural per language, zero counts omitted. */
 function householdSummary(t: ReturnType<typeof translator>, children: number, pets: number) {
@@ -35,6 +36,7 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
   const vetting = user.role === 'caregiver' ? (await apiGet<Vetting>('/v1/caregiver/vetting', locale)).body : null;
   const household = user.role === 'client' ? (await apiGet<Household>('/v1/household', locale)).body : null;
   const profile = user.role === 'caregiver' ? (await apiGet<{ gaps: string[] }>('/v1/caregiver/profile', locale)).body : null;
+  const reputation = vetting?.canAcceptBookings ? (await apiGet<OwnReputation>('/v1/caregiver/reputation', locale)).body : null;
   const done = vetting ? vetting.steps.filter((s) => s.status === 'passed').length : 0;
   const firstName = user.name.split(' ')[0] ?? user.name;
 
@@ -90,6 +92,8 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
           </div>
         </Card>
       )}
+
+      {reputation && <LevelCard t={t} locale={locale} data={reputation} />}
 
       {user.role === 'client' && (
         <>

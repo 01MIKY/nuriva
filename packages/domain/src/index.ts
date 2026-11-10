@@ -9,3 +9,4 @@ export * from './caregiver.js';
 export * from './availability.js';
 export * from './series.js';
 export * from './offplatform.js';
+export * from './reputation.js';

@@ -4,6 +4,7 @@ import { Icon, buttonClass } from '@nuriva/ui';
 import { LANGUAGES } from '@nuriva/domain';
 import { formatMoney, type MessageKey } from '@nuriva/i18n';
 import { resolveLocale, translator } from '@/lib/i18n';
+import { BadgeList, LevelPill } from '@/components/Reputation';
 import { apiGet, type Me } from '@/lib/server-api';
 import { avatarTint, type SearchResponse } from '@/lib/search';
 import { SearchFilters } from '@/components/SearchFilters';
@@ -94,6 +95,8 @@ export default async function SearchPage({ params, searchParams }: { params: Pro
                   <span className="cg-meta">{c.rating ? `★ ${c.rating.avg.toLocaleString(locale)} (${c.rating.count}) · ` : ''}{t('web.search.years', { n: c.yearsExperience })} · {c.languages.map((l) => t(`web.care.languageNames.${l as 'en'}`)).join(', ')}</span>
                   <span className="cg-badges">
                     <span className="n-badge n-badge-ok">✓ {t('web.search.verified')}</span>
+                    <LevelPill t={t} level={c.level} />
+                    <BadgeList t={t} badges={c.badges.filter((b) => b.key !== 'bilingual')} max={1} />
                     {c.services.slice(0, 3).map((s) => <span key={s} className="n-badge n-badge-neutral">{t(`services.${s}` as MessageKey)}</span>)}
                   </span>
                 </span>

@@ -273,3 +273,15 @@ a.toggle-chip { text-decoration: none; }
 /* Off-platform reminder in chat */
 .chat-reminder { display: block; margin-top: 4px; font-style: italic; opacity: 0.85; }
 .off-warning { border-left: 4px solid var(--n-sand-ink, #8A6A3F); }
+/* Caregiver levels and badges (fixed colours with dark ink: readable in light and dark themes) */
+.lvl-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font: 700 0.78rem/1.4 var(--f-body); white-space: nowrap; }
+.lvl-pill.silver { background: #DDE2E8; color: #2B3440; }
+.lvl-pill.gold { background: #F2D58A; color: #4A3500; }
+.lvl-pill.new { background: var(--surface-2, #EEE9E0); color: var(--fg); }
+.hero-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.level-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.level-stats div { background: var(--surface-2, #F5F2EC); border-radius: 12px; padding: 10px; }
+.level-stats dt { font-size: 0.78rem; color: var(--muted, inherit); }
+.level-stats dd { margin: 2px 0 0; font: 800 1.1rem var(--f-display); }
+.level-missing { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+@media (max-width: 480px) { .level-stats { grid-template-columns: 1fr; } }

@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { and, desc, eq, gt, inArray, lt, sql } from 'drizzle-orm';
-import { bookings, bookingSeries, dependents, users, caregiverProfiles, reviews } from '@nuriva/db';
+import { bookings, bookingSeries, dependents, users, caregiverProfiles } from '@nuriva/db';
 import { applicationFeeCents, cancellationRefund } from '@nuriva/domain';
 import {
   DIVISIONS, DomainError, MULTI_DAY_SERVICES, SERIES_MAX_WEEKS, SERIES_MIN_WEEKS, SLOT_HOLDING, assertTransition, contactRevealed, fitsAvailability, publicName,
@@ -12,6 +12,7 @@ import { audit } from '../lib/audit.js';
 import { requireRole } from '../plugins/session.js';
 import { activeServices, bookableServices, isListed, loadCandidates, vettingFor } from './search.js';
 import { loadAvailability } from './caregiver.js';
+import { ratingsFor } from './reputation.js';
 import { providerError, refreshPayoutStatus } from './payouts.js';
 
 const BookingRequest = z.object({
@@ -299,9 +300,7 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
       if (!clash.length) free.push(r);
     }
     const ids = free.map((r) => r.userId);
-    const rated = ids.length ? await db.select({ cg: reviews.caregiverId, avg: sql<number>`round(avg(${reviews.rating})::numeric, 1)::float`, count: sql<number>`count(*)::int` })
-      .from(reviews).where(and(inArray(reviews.caregiverId, ids), eq(reviews.hidden, false))).groupBy(reviews.caregiverId) : [];
-    const rating = new Map(rated.map((x) => [x.cg, { avg: x.avg, count: x.count }]));
+    const rating = await ratingsFor(deps, ids);
     const score = (r: (typeof free)[number]) => (rating.get(r.userId)?.avg ?? 0) * 10 + r.yearsExperience;
     return {
       alternatives: free.sort((a, b) => score(b) - score(a)).slice(0, 5).map((r) => ({

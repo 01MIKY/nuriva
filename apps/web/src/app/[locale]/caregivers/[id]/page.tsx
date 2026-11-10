@@ -7,6 +7,7 @@ import { resolveLocale, translator } from '@/lib/i18n';
 import { apiGet, type Me } from '@/lib/server-api';
 import { avatarTint, type PublicProfile } from '@/lib/search';
 import { FavoriteButton } from '@/components/FavoriteButton';
+import { BadgeList, LevelPill } from '@/components/Reputation';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -46,7 +47,12 @@ export default async function CaregiverProfilePage({ params }: { params: Promise
             <h1>{c.displayName}</h1>
             <p className="profile-headline">{c.headline}</p>
             <p className="cg-meta">{t('web.search.years', { n: c.yearsExperience })} · {t('web.profile.memberSince', { date: since })}</p>
-            <span className="n-badge n-badge-ok">✓ {t('web.search.verified')}</span>
+            <span className="hero-badges">
+              <span className="n-badge n-badge-ok">✓ {t('web.search.verified')}</span>
+              <LevelPill t={t} level={c.level} />
+              {c.completed > 0 && <span className="n-badge n-badge-neutral">{c.completed === 1 ? t('web.reputation.completedOne') : t('web.reputation.completed', { n: c.completed })}</span>}
+              <BadgeList t={t} badges={c.badges} />
+            </span>
             {c.rating && <span className="rating-line" aria-label={t('web.service.stars', { n: c.rating.avg })}>★ {c.rating.avg.toLocaleString(locale)} · {(c.rating.count === 1 ? t('web.profile.reviewCountOne') : t('web.profile.reviewCount', { n: c.rating.count }))}</span>}
           </section>
 
