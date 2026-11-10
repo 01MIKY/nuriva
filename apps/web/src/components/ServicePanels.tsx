@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { t, type Locale, type MessageKey } from '@nuriva/i18n';
 import { Alert, Button, Card } from '@nuriva/ui';
+import { offPlatformSignals, type OffPlatformSignal } from '@nuriva/domain';
 import { apiPost, apiSend } from '@/lib/client-api';
 
 type Tr = (k: MessageKey, v?: Record<string, string | number>) => string;
@@ -88,7 +89,7 @@ export function TimelinePanel({ locale, id, role, status }: { locale: Locale; id
   );
 }
 
-interface Msg { id: number; mine: boolean; body: string; createdAt: string }
+interface Msg { id: number; mine: boolean; body: string; createdAt: string; signals?: string[] }
 
 /** Conversation between the family and the caregiver of this booking (refreshes every 15 s). */
 export function ChatPanel({ locale, id, closed }: { locale: Locale; id: number; closed: boolean }) {
@@ -106,16 +107,26 @@ export function ChatPanel({ locale, id, closed }: { locale: Locale; id: number; 
     return () => clearInterval(timer);
   }, [load, closed]);
 
-  async function send(ev: FormEvent<HTMLFormElement>) {
-    ev.preventDefault();
-    const form = ev.currentTarget;
-    const body = String(new FormData(form).get('body') ?? '').trim();
-    if (!body) return;
+  const [draft, setDraft] = useState('');
+  // Friendly reminder before sending contact details or off-app payment talk. Never blocks (docs/RETENTION.md).
+  const [warning, setWarning] = useState<OffPlatformSignal[] | null>(null);
+
+  async function deliver(body: string) {
     const r = await apiPost<{ message: Msg }>(`/v1/bookings/${id}/messages`, { body }, locale);
     if (!r.ok) return setError(r.error.message || tr('errors.internal'));
     setError(null);
+    setWarning(null);
     setMessages((m) => [...m, r.data.message]);
-    form.reset();
+    setDraft('');
+  }
+
+  async function send(ev: FormEvent<HTMLFormElement>) {
+    ev.preventDefault();
+    const body = draft.trim();
+    if (!body) return;
+    const signals = offPlatformSignals(body);
+    if (signals.length && !warning) return setWarning(signals);
+    await deliver(body);
   }
 
   const fmt = timeFmt(locale);
@@ -130,6 +141,7 @@ export function ChatPanel({ locale, id, closed }: { locale: Locale; id: number; 
               <li key={m.id} className={m.mine ? 'mine' : 'theirs'}>
                 <span>{m.body}</span>
                 <small>{m.mine ? `${tr('web.service.you')} · ` : ''}{fmt.format(new Date(m.createdAt))}</small>
+                {m.signals?.length ? <small className="chat-reminder">ⓘ {tr('web.service.offReminder')}</small> : null}
               </li>
             ))}
           </ul>
@@ -137,9 +149,20 @@ export function ChatPanel({ locale, id, closed }: { locale: Locale; id: number; 
         {!closed && (
           <form className="inline-row" onSubmit={send} aria-label={tr('web.service.messages')}>
             <label htmlFor="chat-body" className="sr-only">{tr('web.service.messagePh')}</label>
-            <input id="chat-body" name="body" className="n-input" maxLength={1000} placeholder={tr('web.service.messagePh')} autoComplete="off" />
+            <input id="chat-body" name="body" className="n-input" maxLength={1000} placeholder={tr('web.service.messagePh')} autoComplete="off"
+              value={draft} onChange={(e) => { setDraft(e.target.value); setWarning(null); }} />
             <Button type="submit">{tr('web.service.send')}</Button>
           </form>
+        )}
+        {!closed && warning && (
+          <div className="confirm off-warning" role="alertdialog" aria-labelledby="off-title" aria-describedby="off-body">
+            <strong id="off-title">{tr('web.service.offTitle')}</strong>
+            <span id="off-body">{tr(warning.includes('payment') ? 'web.service.offPayment' : 'web.service.offContact')}</span>
+            <div className="n-row">
+              <Button variant="quiet" onClick={() => { setWarning(null); document.getElementById('chat-body')?.focus(); }}>{tr('web.service.editMessage')}</Button>
+              <Button variant="secondary" onClick={() => void deliver(draft.trim())}>{tr('web.service.sendAnyway')}</Button>
+            </div>
+          </div>
         )}
       </div>
     </Card>

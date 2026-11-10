@@ -270,3 +270,6 @@ a.toggle-chip { text-decoration: none; }
 /* Backup guarantee */
 .backup-card { border: 1.5px solid var(--n-sage); }
 .backup-option { padding: 10px 0; border-top: 1px solid var(--line); }
+/* Off-platform reminder in chat */
+.chat-reminder { display: block; margin-top: 4px; font-style: italic; opacity: 0.85; }
+.off-warning { border-left: 4px solid var(--n-sand-ink, #8A6A3F); }

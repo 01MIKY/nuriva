@@ -248,6 +248,8 @@ export const bookingMessages = pgTable('booking_messages', {
   bookingId: fk('booking_id').notNull().references(() => bookings.id, { onDelete: 'cascade' }),
   senderId: fk('sender_id').notNull().references(() => users.id),
   bodyEnc: text('body_enc').notNull(),
+  /** Off-platform signals found in the text (phone, email, link, payment): reminder + aggregate metrics only. */
+  signals: text('signals').array().notNull().default(sql`ARRAY[]::text[]`),
   createdAt: createdAt(),
 }, (t) => [index('booking_messages_booking_idx').on(t.bookingId, t.id)]);
 

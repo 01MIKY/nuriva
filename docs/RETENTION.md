@@ -11,11 +11,12 @@ Aprobada por el propietario el 10 nov 2026 (D7). **Objetivo:** que reservar por 
 | Garantía de suplente | Familias | Si la cuidadora no puede ir: devolución del 100 % y otros cuidadores libres a la misma hora |
 | Cobro garantizado | Cuidadores | Cobran sin perseguir a nadie; en cancelación tardía de la familia conservan el 50 % (política provisional) |
 | Datos de contacto ocultos hasta aceptar | Ambos | Reduce el contacto por fuera antes de reservar |
+| Aviso en el chat | Ambos | Si un mensaje incluye teléfono, correo, enlace o pago fuera de la app (Zelle, Venmo, efectivo…), se recuerda lo que se pierde fuera de NURIVA antes de enviarlo. **Nunca se bloquea.** Quien lo recibe ve el mismo recordatorio. Solo se guarda la categoría; el texto sigue cifrado |
 | Verificación, seguimiento en vivo, chat, incidentes | Ambos | Todo queda registrado y protegido solo dentro de la app |
 
 ## Siguientes pasos
 - **Sin proveedores nuevos:**
-  - aviso amable en el chat si se comparte un teléfono o correo antes de reservar;
+  - métricas para Trust & Safety: mensajes con señales de contacto o pago por fuera, por cuidador;
   - insignias y niveles del cuidador según reservas en la app;
   - recibos descargables;
   - "Contratar como niñera fija" con tarifa de colocación (pendiente del abogado).

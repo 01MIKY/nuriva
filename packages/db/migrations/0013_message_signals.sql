@@ -1,0 +1,1 @@
+ALTER TABLE "booking_messages" ADD COLUMN "signals" text[] DEFAULT ARRAY[]::text[] NOT NULL;

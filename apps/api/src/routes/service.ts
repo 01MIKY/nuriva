@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { and, asc, desc, eq } from 'drizzle-orm';
 import { bookings, bookingMessages, bookingUpdates, reviews, incidents, users } from '@nuriva/db';
-import { DomainError } from '@nuriva/domain';
+import { DomainError, offPlatformSignals } from '@nuriva/domain';
 import type { Deps } from '../lib/context.js';
 import { audit } from '../lib/audit.js';
 import { requireRole, requirePermission } from '../plugins/session.js';
@@ -45,15 +45,17 @@ export async function serviceRoutes(app: FastifyInstance, deps: Deps) {
   app.get('/bookings/:id/messages', parties, async (req) => {
     const { row } = await loadFor(req);
     const rows = await db.select().from(bookingMessages).where(eq(bookingMessages.bookingId, row.id)).orderBy(asc(bookingMessages.id)).limit(500);
-    return { messages: rows.map((m) => ({ id: m.id, mine: m.senderId === req.user!.id, body: cipher.decrypt(m.bodyEnc), createdAt: m.createdAt })) };
+    return { messages: rows.map((m) => ({ id: m.id, mine: m.senderId === req.user!.id, body: cipher.decrypt(m.bodyEnc), createdAt: m.createdAt, signals: m.signals })) };
   });
 
   app.post('/bookings/:id/messages', { ...parties, config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async (req, reply) => {
     const { body } = Message.parse(req.body);
     const { row } = await loadFor(req);
     if (row.status === 'declined' || row.status === 'cancelled') throw new DomainError('conversation_closed', 'Closed', 409);
-    const [m] = await db.insert(bookingMessages).values({ bookingId: row.id, senderId: req.user!.id, bodyEnc: cipher.encrypt(body) }).returning();
-    return reply.status(201).send({ message: { id: m!.id, mine: true, body, createdAt: m!.createdAt } });
+    // Never blocked: the app reminds both parties what they lose outside NURIVA (docs/RETENTION.md).
+    const signals = offPlatformSignals(body);
+    const [m] = await db.insert(bookingMessages).values({ bookingId: row.id, senderId: req.user!.id, bodyEnc: cipher.encrypt(body), signals }).returning();
+    return reply.status(201).send({ message: { id: m!.id, mine: true, body, createdAt: m!.createdAt, signals } });
   });
 
   // ---------- Care timeline ----------

@@ -68,6 +68,18 @@ test('messages, check-in, care updates, check-out, review, emergency report and 
   await expect(cg.locator('.chat li.theirs')).toContainText('Sofía cena a las 7.');
   await cg.getByRole('form', { name: 'Mensajes' }).getByPlaceholder('Escribe un mensaje…').fill('Perfecto, gracias.');
   await cg.getByRole('form', { name: 'Mensajes' }).getByRole('button', { name: 'Enviar' }).click();
+  // Off-app payment talk: a friendly reminder first, never a block.
+  const cgChat = cg.getByRole('form', { name: 'Mensajes' });
+  await expect(cg.locator('.chat li.mine')).toContainText('Perfecto, gracias.');
+  await cgChat.getByPlaceholder('Escribe un mensaje…').fill('Si quieres, la próxima vez me pagas por Zelle');
+  await cgChat.getByRole('button', { name: 'Enviar' }).click();
+  const warn = cg.getByRole('alertdialog', { name: 'Antes de enviar' });
+  await expect(warn).toContainText('pago fuera de NURIVA');
+  await warn.getByRole('button', { name: 'Editar mensaje' }).click();
+  await expect(cgChat.getByPlaceholder('Escribe un mensaje…')).toHaveValue('Si quieres, la próxima vez me pagas por Zelle');
+  await cgChat.getByRole('button', { name: 'Enviar' }).click();
+  await cg.getByRole('alertdialog', { name: 'Antes de enviar' }).getByRole('button', { name: 'Enviar de todos modos' }).click();
+  await expect(cg.locator('.chat li.mine').last()).toContainText('Zelle');
   await cg.getByRole('button', { name: 'Marcar llegada (ya estoy aquí)' }).click();
   await expect(cg.getByText('En curso').first()).toBeVisible();
   const upd = cg.getByRole('form', { name: 'Enviar una novedad a la familia' });
@@ -78,7 +90,9 @@ test('messages, check-in, care updates, check-out, review, emergency report and 
   await expect(cg.getByText('Completada').first()).toBeVisible();
 
   await fam.reload();
-  await expect(fam.locator('.chat li.theirs')).toContainText('Perfecto, gracias.');
+  await expect(fam.locator('.chat li.theirs').first()).toContainText('Perfecto, gracias.');
+  await expect(fam.locator('.chat li.theirs').last().locator('.chat-reminder')).toContainText('fuera de NURIVA no hay pago protegido');
+  await expect(fam.locator('.chat li.theirs').first().locator('.chat-reminder')).toHaveCount(0);
   await expect(fam.locator('.timeline')).toContainText('El cuidador llegó');
   await expect(fam.locator('.timeline')).toContainText('Ya cenó y estamos leyendo un cuento.');
   await expect(fam.locator('.timeline')).toContainText('Servicio terminado');

@@ -50,6 +50,17 @@ describe('service in progress: messages, check-in/out, updates, reviews, inciden
     expect((await ana.c.post(`/v1/bookings/${id}/messages`, { body: '' })).status).toBe(400);
   });
 
+  it('never blocks a message that shares contact or off-app payment, but marks it so both see a reminder', async () => {
+    const sent = await carer.c.post(`/v1/bookings/${id}/messages`, { body: 'Si quieres te paso mi WhatsApp: 305-555-1234, y me pagas por Zelle' });
+    expect(sent.status).toBe(201);
+    expect(sent.body.message.signals).toEqual(['payment', 'phone']);
+    const seen = (await ana.c.get(`/v1/bookings/${id}/messages`)).body.messages as Array<{ signals: string[]; mine: boolean }>;
+    expect(seen.at(-1)).toMatchObject({ mine: false, signals: ['payment', 'phone'] });
+    expect(seen[0]!.signals).toEqual([]);
+    // Only the category is stored in clear; the text stays encrypted.
+    expect(JSON.stringify((await h.db.execute(sql`select body_enc from booking_messages`)).rows)).not.toContain('Zelle');
+  });
+
   it('only allows check-in once accepted, by the caregiver, and not too early', async () => {
     expect((await carer.c.post(`/v1/bookings/${id}/check-in`)).body.error).toBe('invalid_transition'); // still requested
     await carer.c.post(`/v1/bookings/${id}/accept`);

@@ -8,3 +8,4 @@ export * from './household.js';
 export * from './caregiver.js';
 export * from './availability.js';
 export * from './series.js';
+export * from './offplatform.js';
