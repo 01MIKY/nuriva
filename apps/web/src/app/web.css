@@ -285,3 +285,18 @@ a.toggle-chip { text-decoration: none; }
 .level-stats dd { margin: 2px 0 0; font: 800 1.1rem var(--f-display); }
 .level-missing { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 @media (max-width: 480px) { .level-stats { grid-template-columns: 1fr; } }
+/* Receipts (printable; the browser's "Save as PDF" produces the PDF) */
+.receipt-page { max-width: 720px; display: grid; gap: 16px; padding-block: 24px; }
+.receipt { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: clamp(18px, 4vw, 32px); display: grid; gap: 18px; }
+.receipt-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.receipt-id { text-align: right; }
+.receipt-id h1 { margin: 0; font-size: 1.4rem; }
+.receipt-id p { margin: 4px 0 0; color: var(--muted); font-size: 0.85rem; }
+.receipt-notes { border-top: 1px dashed var(--line); padding-top: 12px; display: grid; gap: 6px; font-size: 0.82rem; color: var(--muted); }
+.receipt-notes p { margin: 0; }
+@media print {
+  .site-header, .site-footer, .staging-banner, .skip-link, .no-print { display: none !important; }
+  body { background: #fff !important; color: #000 !important; }
+  .receipt { border: 0; padding: 0; background: #fff; color: #000; }
+  .receipt-notes, .receipt-id p { color: #333; }
+}

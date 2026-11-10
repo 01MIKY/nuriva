@@ -11,6 +11,7 @@ Aprobada por el propietario el 10 nov 2026 (D7). **Objetivo:** que reservar por 
 | Garantía de suplente | Familias | Si la cuidadora no puede ir: devolución del 100 % y otros cuidadores libres a la misma hora |
 | Cobro garantizado | Cuidadores | Cobran sin perseguir a nadie; en cancelación tardía de la familia conservan el 50 % (política provisional) |
 | Datos de contacto ocultos hasta aceptar | Ambos | Reduce el contacto por fuera antes de reservar |
+| Recibos imprimibles | Ambos | La familia tiene un recibo (o un comprobante si no hubo pago) con número NUR-, desglose, pagos y devoluciones. La cuidadora tiene un resumen de ingresos: subtotal, comisión y neto antes de las comisiones de Stripe. Se guardan en PDF desde el navegador. Indican que no son factura fiscal |
 | Panel "Fuera de la app" (Trust & Safety) | Plataforma | Recuento por persona de mensajes con contacto o pago por fuera (30, 90 o 365 días), sin mostrar el texto. Cada consulta se audita. El panel advierte que las coincidencias automáticas pueden fallar y no son prueba ni motivo de sanción automática |
 | Niveles e insignias | Cuidadores | Plata y Oro según su historial **en NURIVA**: servicios completados, reseñas visibles, familias que repiten y cancelaciones propias. Insignias con hechos comprobables: bilingüe, familias que repiten, suele responder en menos de 2 h, sin cancelaciones en 90 días. La cuidadora ve qué le falta para el siguiente nivel; si se va de la app, su historial no viaja con ella. Son informativos: no cambian sus condiciones |
 | Aviso en el chat | Ambos | Si un mensaje incluye teléfono, correo, enlace o pago fuera de la app (Zelle, Venmo, efectivo…), se recuerda lo que se pierde fuera de NURIVA antes de enviarlo. **Nunca se bloquea.** Quien lo recibe ve el mismo recordatorio. Solo se guarda la categoría; el texto sigue cifrado |
@@ -18,7 +19,6 @@ Aprobada por el propietario el 10 nov 2026 (D7). **Objetivo:** que reservar por 
 
 ## Siguientes pasos
 - **Sin proveedores nuevos:**
-  - recibos descargables;
   - "Contratar como niñera fija" con tarifa de colocación (pendiente del abogado).
 - **Requieren decisión del propietario:**
   - umbrales de Plata y Oro (provisionales en `packages/domain/src/reputation.ts`): Plata con 10 servicios, nota 4,5 (3 reseñas) y como mucho 1 cancelación en 90 días; Oro con 30 servicios, nota 4,7 (10 reseñas), 3 familias que repiten y ninguna cancelación;

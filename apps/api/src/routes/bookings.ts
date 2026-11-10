@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { and, desc, eq, gt, inArray, lt, sql } from 'drizzle-orm';
 import { bookings, bookingSeries, dependents, users, caregiverProfiles } from '@nuriva/db';
-import { applicationFeeCents, cancellationRefund } from '@nuriva/domain';
+import { POLICY, applicationFeeCents, cancellationRefund } from '@nuriva/domain';
 import {
   DIVISIONS, DomainError, MULTI_DAY_SERVICES, SERIES_MAX_WEEKS, SERIES_MIN_WEEKS, SLOT_HOLDING, assertTransition, contactRevealed, fitsAvailability, publicName,
   initialsOf, quote, validateSchedule, weeklyDates, zonedToUtc, type BookingStatus, type Division, type Service,
@@ -274,6 +274,35 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
     const [cur] = await db.select().from(bookings).where(eq(bookings.id, row.id));
     return { booking: await present(cur!, role), changed };
   }
+  /**
+   * Receipt / service summary for one booking, for printing or saving as PDF. Families get it for completed or
+   * paid bookings; caregivers for completed ones (earnings view). It is not a tax invoice: NURIVA does not hold the
+   * caregiver's legal or tax details (see docs/COMPLIANCE.md). Each party sees only what it already could.
+   */
+  app.get('/bookings/:id/receipt', { preHandler: requireRole('client', 'caregiver') }, async (req) => {
+    const { id } = IdParam.parse(req.params);
+    const { row, role } = await loadFor(req, id);
+    const available = role === 'client' ? row.status === 'completed' || row.paidCents > 0 : row.status === 'completed';
+    if (!available) throw new DomainError('receipt_unavailable', 'No receipt for this booking yet', 409);
+    const [[client], [cg]] = await Promise.all([
+      db.select({ name: users.name }).from(users).where(eq(users.id, row.clientId)),
+      db.select({ name: users.name }).from(users).where(eq(users.id, row.caregiverId)),
+    ]);
+    const commissionCents = row.applicationFeeCents !== null ? row.applicationFeeCents - row.clientFeeCents : applicationFeeCents(row.subtotalCents, row.clientFeeCents) - row.clientFeeCents;
+    const base = {
+      number: `NUR-${String(row.id).padStart(6, '0')}`, issuedAt: new Date(), viewerRole: role, status: row.status,
+      service: row.service, division: row.division, startAt: row.startAt, endAt: row.endAt,
+      minutes: Math.round((row.endAt.getTime() - row.startAt.getTime()) / 60000),
+      hourlyRateCents: row.hourlyRateCents, subtotalCents: row.subtotalCents,
+      caregiver: publicName(cg?.name ?? ''),
+    };
+    if (role === 'client') {
+      return { receipt: { ...base, family: client?.name ?? '', clientFeeCents: row.clientFeeCents, totalCents: row.totalCents,
+        payment: { status: row.paymentStatus, paidCents: row.paidCents, refundedCents: row.refundedCents, netPaidCents: row.paidCents - row.refundedCents, paidAt: row.paidAt } } };
+    }
+    return { receipt: { ...base, family: (client?.name ?? '').split(' ')[0] ?? '', commissionRate: POLICY.commissionRate, commissionCents, netCents: row.subtotalCents - commissionCents, paid: row.paidCents > 0 } };
+  });
+
   /**
    * Backup guarantee: when the caregiver declines or cancels a visit that has not started, the family sees other
    * listed caregivers who can take the SAME service at the SAME time (availability fits, no overlapping booking).

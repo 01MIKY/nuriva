@@ -68,6 +68,16 @@ test('a family saves a caregiver, finds her in Favorites and books again with th
   await expect(card.getByRole('link', { name: 'Reservar' })).toHaveAttribute('href', `/es/book/${publicId}`);
 
   await page.goto(`${WEB}/es/bookings/${bookingId}`);
+  // Printable receipt of the completed service (no payment was charged: payments are off in tests)
+  await page.getByRole('link', { name: /Ver recibo/ }).click();
+  const receipt = page.getByRole('article', { name: 'Comprobante de servicio' });
+  await expect(receipt).toContainText(`NUR-${String(bookingId).padStart(6, '0')}`);
+  await expect(receipt).toContainText('Cuidado (3 h × $26.00)');
+  await expect(receipt).toContainText('$85.80');
+  await expect(receipt).toContainText('No se ha cobrado ningún pago por esta reserva.');
+  await expect(receipt).toContainText('no es una factura fiscal');
+  await expect(page.getByRole('button', { name: 'Imprimir o guardar como PDF' })).toBeVisible();
+  await page.getByRole('link', { name: /Volver a la reserva/ }).click();
   await page.getByRole('link', { name: 'Reservar de nuevo' }).click();
   await expect(page.getByText('Copiamos los datos de tu reserva anterior.', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sofía' })).toHaveAttribute('aria-pressed', 'true');

@@ -15,6 +15,7 @@ test.skip(({ isMobile }) => isMobile, 'Reputation journey runs once, on desktop'
 
 const carerEmail = `rep.carer.${run}@example.com`;
 let publicId = '';
+let firstBooking = 0;
 
 test.beforeAll(async () => {
   const rootEmail = `root.rep.${run}@nuriva.test`;
@@ -40,6 +41,7 @@ test.beforeAll(async () => {
     expect((await carer.post(`/api/v1/bookings/${id}/accept`)).status()).toBe(200);
     ids.push(id);
   }
+  firstBooking = ids[0]!;
   // Test only: the ten services took place.
   execFileSync('psql', [DB, '-q', '-c', `update bookings set status = 'completed' where id in (${ids.join(',')})`]);
   for (const id of ids.slice(0, 3)) expect((await family.post(`/api/v1/bookings/${id}/review`, { data: { rating: 5, comment: 'Excelente' } })).status()).toBe(201);
@@ -66,4 +68,12 @@ test('levels and badges: families see Silver on the profile and in search; the c
   await expect(card).toContainText('20 servicios completados más');
   await expect(card).toContainText('7 reseñas más de familias');
   await expect(card).toContainText('No cambian tus condiciones.');
+
+  // Earnings summary for one completed service: 2 h × $25 = $50.00, 15 % commission $7.50 → $42.50
+  await page.goto(`${WEB}/es/bookings/${firstBooking}/receipt`);
+  const earnings = page.getByRole('article', { name: 'Resumen de ingresos' });
+  await expect(earnings).toContainText('Comisión NURIVA (15 %)');
+  await expect(earnings).toContainText('$42.50');
+  await expect(earnings).toContainText('Ana');
+  await expect(earnings).not.toContainText('López');
 });

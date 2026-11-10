@@ -35,6 +35,9 @@ export default async function BookingDetail({ params, searchParams }: { params: 
         <Badge tone={statusTone[b.status]}>{t(`bookingStatus.${b.status}`)}</Badge>
       </div>
       <p className="n-muted">{isCg ? t('web.bookings.from', { name: b.client.firstName }) : t('web.bookings.with', { name: b.caregiver.displayName })}</p>
+      {(b.status === 'completed' || (!isCg && b.payment.paidCents > 0)) && (
+        <Link className="link-btn" href={`/${locale}/bookings/${b.id}/receipt`}>🧾 {t('web.receipt.view')}</Link>
+      )}
       {b.series && <p className="series-tag">↻ {t('web.bookings.seriesInfo', { i: b.series.index, n: b.series.count })}</p>}
       {!isCg && b.caregiver.publicId && (b.status === 'completed' || b.status === 'cancelled') && (
         <Link className={buttonClass('primary')} href={`/${locale}/book/${b.caregiver.publicId}?again=${b.id}`}>{t('web.book.again')}</Link>
