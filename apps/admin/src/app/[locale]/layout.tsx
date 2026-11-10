@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
-import { Bricolage_Grotesque, Figtree } from 'next/font/google';
+import localFont from 'next/font/local';
 import { hasPermission } from '@nuriva/domain';
 import { LogoMark } from '@nuriva/ui';
 import '@nuriva/ui/styles.css';
@@ -10,8 +10,9 @@ import { apiGet, type Me } from '@/lib/server-api';
 import { LanguageSwitch } from '@/components/LanguageSwitch';
 import { SignOut } from '@/components/SignOut';
 
-const display = Bricolage_Grotesque({ subsets: ['latin'], weight: ['500', '700', '800'], variable: '--font-display', display: 'swap' });
-const body = Figtree({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-body', display: 'swap' });
+// Self-hosted variable fonts (packages/ui/fonts, SIL OFL): builds never depend on downloading from Google.
+const display = localFont({ src: '../../../../../packages/ui/fonts/bricolage-grotesque-latin-wght-normal.woff2', weight: '200 800', variable: '--font-display', display: 'swap' });
+const body = localFont({ src: '../../../../../packages/ui/fonts/figtree-latin-wght-normal.woff2', weight: '300 900', variable: '--font-body', display: 'swap' });
 
 export const dynamic = 'force-dynamic';
 

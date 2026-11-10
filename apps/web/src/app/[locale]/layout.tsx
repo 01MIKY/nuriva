@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
-import { Bricolage_Grotesque, Figtree } from 'next/font/google';
+import localFont from 'next/font/local';
 import { Logo } from '@nuriva/ui';
 import '@nuriva/ui/styles.css';
 import '../web.css';
@@ -8,8 +8,9 @@ import { resolveLocale, translator, otherLocale } from '@/lib/i18n';
 import { apiGet, type Me } from '@/lib/server-api';
 import { LanguageSwitch } from '@/components/LanguageSwitch';
 
-const display = Bricolage_Grotesque({ subsets: ['latin'], weight: ['500', '700'], variable: '--font-display', display: 'swap' });
-const body = Figtree({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-body', display: 'swap' });
+// Self-hosted variable fonts (packages/ui/fonts, SIL OFL): builds never depend on downloading from Google.
+const display = localFont({ src: '../../../../../packages/ui/fonts/bricolage-grotesque-latin-wght-normal.woff2', weight: '200 800', variable: '--font-display', display: 'swap' });
+const body = localFont({ src: '../../../../../packages/ui/fonts/figtree-latin-wght-normal.woff2', weight: '300 900', variable: '--font-body', display: 'swap' });
 
 // Pages depend on the visitor's session, so they are rendered per request (never cached across users).
 export const dynamic = 'force-dynamic';
