@@ -280,6 +280,7 @@ export const es: Catalog = {
       notFound: 'Este perfil no está disponible.',
       reviews: 'Reseñas de familias',
       reviewCount: '{n} reseñas',
+      reviewCountOne: '1 reseña',
     },
     availability: {
       title: 'Mi disponibilidad',
@@ -482,7 +483,7 @@ export const es: Catalog = {
     signInIntro: 'Solo para el equipo de NURIVA. Cada acción queda registrada.',
     noAccess: 'Esta cuenta no tiene acceso al panel de administración.',
     signedInAs: 'Sesión de {name}',
-    nav: { caregivers: 'Cuidadores', compliance: 'Cumplimiento', incidents: 'Incidentes', audit: 'Auditoría' },
+    nav: { caregivers: 'Cuidadores', compliance: 'Cumplimiento', incidents: 'Incidentes', reviews: 'Reseñas', audit: 'Auditoría' },
     roles: { superadmin: 'Superadmin', operations: 'Operaciones', trust_safety: 'Trust & Safety', finance: 'Finanzas', support: 'Soporte' },
     caregivers: {
       title: 'Cuidadores',
@@ -525,6 +526,20 @@ export const es: Catalog = {
       severity: { low: 'Baja', medium: 'Media', high: 'Alta', emergency: 'Emergencia' },
       status: { open: 'Abierto', investigating: 'En investigación', resolved: 'Resuelto' },
       roles: { client: 'familia', caregiver: 'cuidador', admin: 'equipo' },
+    },
+    reviews: {
+      title: 'Reseñas',
+      policy: 'Oculta solo contenido abusivo, datos personales o reseñas que no tengan que ver con el servicio. Nunca ocultes una reseña por ser negativa. Cada cambio queda registrado con su motivo.',
+      filters: { all: 'Todas', hidden: 'Ocultas' },
+      empty: 'No hay reseñas en esta vista.',
+      hidden: 'Oculta',
+      visible: 'Publicada',
+      hide: 'Ocultar',
+      show: 'Volver a mostrar',
+      reason: 'Motivo (obligatorio)',
+      confirm: 'Confirmar',
+      saved: 'Reseña actualizada',
+      by: 'de {name} · reserva n.º {id}',
     },
     audit: {
       title: 'Auditoría', intro: 'Registro de solo inserción de las acciones sensibles. Lo más reciente primero.',

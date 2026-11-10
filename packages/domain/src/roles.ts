@@ -18,6 +18,7 @@ export const PERMISSIONS = [
   'payments.read',
   'payments.refund',
   'incidents.manage',
+  'reviews.moderate',
   'compliance.activate_service',
   'staff.manage',
   'audit.read',
@@ -27,7 +28,7 @@ export type Permission = (typeof PERMISSIONS)[number];
 const GRANTS: Record<StaffRole, readonly Permission[]> = {
   superadmin: PERMISSIONS,
   operations: ['caregivers.read', 'caregivers.vetting.write', 'clients.read', 'bookings.read', 'bookings.manage'],
-  trust_safety: ['caregivers.read', 'caregivers.vetting.write', 'screening.read', 'clients.read', 'bookings.read', 'incidents.manage', 'audit.read'],
+  trust_safety: ['caregivers.read', 'caregivers.vetting.write', 'screening.read', 'clients.read', 'bookings.read', 'incidents.manage', 'reviews.moderate', 'audit.read'],
   finance: ['bookings.read', 'payments.read', 'payments.refund'],
   support: ['caregivers.read', 'clients.read', 'bookings.read'],
 };

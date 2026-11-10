@@ -101,7 +101,7 @@ test('messages, check-in, care updates, check-out, review, emergency report and 
   // Public profile shows the review
   await fam.goto(`${WEB}/es/caregivers/${publicId}`);
   await expect(fam.getByText('Puntual y muy cariñosa.')).toBeVisible();
-  await expect(fam.getByText('★ 5 · 1 reseñas')).toBeVisible();
+  await expect(fam.getByText('★ 5 · 1 reseña')).toBeVisible();
 
   // Trust & Safety handles the incident
   const ts = await (await browser.newContext()).newPage();
@@ -119,4 +119,19 @@ test('messages, check-in, care updates, check-out, review, emergency report and 
   await ts.getByRole('button', { name: 'Guardar' }).click();
   await expect(ts.getByText('Incidente actualizado')).toBeVisible();
   await expect(ts.getByText('En investigación').first()).toBeVisible();
+
+  // Trust & Safety hides the review (a reason is mandatory) and the public profile stops showing it
+  await ts.getByRole('link', { name: 'Reseñas' }).click();
+  await expect(ts.getByText('Nunca ocultes una reseña por ser negativa.', { exact: false })).toBeVisible();
+  const rv = ts.locator('li.comp-row', { hasText: new RegExp(`reserva n\\.º ${bookingId}(?!\\d)`) });
+  await expect(rv.getByText('Publicada')).toBeVisible();
+  await rv.getByRole('button', { name: /^Ocultar/ }).click();
+  await rv.getByRole('button', { name: 'Confirmar' }).click();
+  await expect(rv.getByRole('alert')).toBeVisible();
+  await rv.getByLabel('Motivo (obligatorio)').fill('Prueba de moderación: contiene datos personales.');
+  await rv.getByRole('button', { name: 'Confirmar' }).click();
+  await expect(rv.getByText('Reseña actualizada')).toBeVisible();
+  await expect(rv.getByText('Oculta', { exact: true })).toBeVisible();
+  await fam.goto(`${WEB}/es/caregivers/${publicId}`);
+  await expect(fam.getByText('Puntual y muy cariñosa.')).toHaveCount(0);
 });

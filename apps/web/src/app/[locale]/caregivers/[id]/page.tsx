@@ -46,7 +46,7 @@ export default async function CaregiverProfilePage({ params }: { params: Promise
             <p className="profile-headline">{c.headline}</p>
             <p className="cg-meta">{t('web.search.years', { n: c.yearsExperience })} · {t('web.profile.memberSince', { date: since })}</p>
             <span className="n-badge n-badge-ok">✓ {t('web.search.verified')}</span>
-            {c.rating && <span className="rating-line" aria-label={t('web.service.stars', { n: c.rating.avg })}>★ {c.rating.avg.toLocaleString(locale)} · {t('web.profile.reviewCount', { n: c.rating.count })}</span>}
+            {c.rating && <span className="rating-line" aria-label={t('web.service.stars', { n: c.rating.avg })}>★ {c.rating.avg.toLocaleString(locale)} · {(c.rating.count === 1 ? t('web.profile.reviewCountOne') : t('web.profile.reviewCount', { n: c.rating.count }))}</span>}
           </section>
 
           <section className="n-card n-stack" aria-labelledby="about-h">

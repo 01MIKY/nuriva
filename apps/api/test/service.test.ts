@@ -112,3 +112,27 @@ describe('service in progress: messages, check-in/out, updates, reviews, inciden
     expect(audits).toEqual(expect.arrayContaining(['incident.create', 'incident.read', 'incident.status']));
   });
 });
+
+describe('review moderation', () => {
+  it('lets Trust & Safety hide and restore a review with a reason, and the profile follows', async () => {
+    const ts = h.client();
+    await ts.post('/v1/auth/login', { email: 'ts.svc@nuriva.test', password: 'admin-password-123' });
+    const finance = await h.admin('fin.svc@nuriva.test', ['finance']);
+    expect((await finance.c.get('/v1/admin/reviews')).status).toBe(403);
+    const list = (await ts.get('/v1/admin/reviews')).body.reviews;
+    expect(list[0]).toMatchObject({ rating: 5, author: 'Ana', hidden: false });
+    const rid = list[0].id;
+    expect((await ts.post(`/v1/admin/reviews/${rid}/visibility`, { hidden: true })).status).toBe(400); // reason required
+    expect((await ts.post(`/v1/admin/reviews/${rid}/visibility`, { hidden: true, reason: 'Contiene datos personales' })).body.review.hidden).toBe(true);
+    const pid = (await h.client().get('/v1/caregivers/search?division=kids')).body.results[0].id;
+    const prof = (await h.client().get(`/v1/caregivers/${pid}`)).body.caregiver;
+    expect(prof.reviews).toEqual([]);
+    expect(prof.rating).toBeNull();
+    expect((await ts.get('/v1/admin/reviews?filter=hidden')).body.reviews).toHaveLength(1);
+    await ts.post(`/v1/admin/reviews/${rid}/visibility`, { hidden: false, reason: 'Revisado: se vuelve a mostrar' });
+    expect((await h.client().get(`/v1/caregivers/${pid}`)).body.caregiver.rating).toEqual({ avg: 5, count: 1 });
+    const audits = (await h.db.execute(sql`select action, meta from audit_log where action in ('review.hide','review.unhide')`)).rows;
+    expect(audits.map((a) => a.action)).toEqual(['review.hide', 'review.unhide']);
+    expect(JSON.stringify(audits[0]!.meta)).toContain('Contiene datos personales');
+  });
+});

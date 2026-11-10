@@ -278,6 +278,7 @@ export const en = {
       notFound: 'This profile is not available.',
       reviews: 'Reviews from families',
       reviewCount: '{n} reviews',
+      reviewCountOne: '1 review',
     },
     availability: {
       title: 'My availability',
@@ -480,7 +481,7 @@ export const en = {
     signInIntro: 'For NURIVA staff only. Every action is recorded.',
     noAccess: 'This account does not have access to the admin panel.',
     signedInAs: 'Signed in as {name}',
-    nav: { caregivers: 'Caregivers', compliance: 'Compliance', incidents: 'Incidents', audit: 'Audit log' },
+    nav: { caregivers: 'Caregivers', compliance: 'Compliance', incidents: 'Incidents', reviews: 'Reviews', audit: 'Audit log' },
     roles: { superadmin: 'Superadmin', operations: 'Operations', trust_safety: 'Trust & Safety', finance: 'Finance', support: 'Support' },
     caregivers: {
       title: 'Caregivers',
@@ -523,6 +524,20 @@ export const en = {
       severity: { low: 'Low', medium: 'Medium', high: 'High', emergency: 'Emergency' },
       status: { open: 'Open', investigating: 'Investigating', resolved: 'Resolved' },
       roles: { client: 'family', caregiver: 'caregiver', admin: 'staff' },
+    },
+    reviews: {
+      title: 'Reviews',
+      policy: 'Hide only abusive content, personal data or reviews unrelated to the service. Never hide a review because it is negative. Every change is recorded with its reason.',
+      filters: { all: 'All', hidden: 'Hidden' },
+      empty: 'No reviews in this view.',
+      hidden: 'Hidden',
+      visible: 'Visible',
+      hide: 'Hide',
+      show: 'Show again',
+      reason: 'Reason (required)',
+      confirm: 'Confirm',
+      saved: 'Review updated',
+      by: 'by {name} · booking #{id}',
     },
     audit: {
       title: 'Audit log', intro: 'Append-only record of security-relevant actions. Newest first.',

@@ -24,7 +24,7 @@
 - **Datos biométricos (selfie de Stripe Identity):** Stripe procesa y guarda el selfie y el documento; NURIVA solo recibe el resultado. Preguntas para el abogado: si hace falta un consentimiento biométrico específico (Florida no tiene una ley como la BIPA de Illinois, pero conviene revisarlo para futuros estados) y qué texto de aviso mostrar antes de verificar.
 
 - **Incidentes y reporte obligatorio:** la app muestra el 911 y la Florida Abuse Hotline (1-800-962-2873) y avisa a Trust & Safety, pero **no sustituye** el reporte obligatorio (Fla. Stat. 39.201). Falta el procedimiento escrito de Trust & Safety (plazos, quién llama a la línea, conservación de evidencias). Para el abogado.
-- **Reseñas (FTC):** solo de reservas completadas, una por reserva y por la propia familia. Falta la moderación (ocultar reseñas abusivas): la columna `hidden` existe, pero no hay pantalla.
+- **Reseñas (FTC):** solo de reservas completadas, una por reserva y por la propia familia. Trust & Safety puede ocultar reseñas abusivas, con datos personales o ajenas al servicio; el motivo es obligatorio y queda auditado, y la pantalla recuerda que no se ocultan reseñas por ser negativas (la Consumer Review Fairness Act y la norma de la FTC de 2024 sobre reseñas castigan suprimir reseñas negativas). Para el abogado: aprobar la política de moderación por escrito y si conviene avisar al autor cuando se oculta su reseña.
 
 ## Cómo lo aplica el software
 - **Minimización de datos de menores:** solo nombre o apodo y edad en años. Sin fecha de nacimiento, fotos ni colegio. Todo cifrado y visible solo para el dueño (y en el futuro, para el cuidador de una reserva aceptada). Pregunta para el abogado: retención y borrado de estos datos al cerrar la cuenta.

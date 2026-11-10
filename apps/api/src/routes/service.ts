@@ -13,6 +13,8 @@ const Update = z.object({ note: z.string().trim().min(1).max(500) }).strict();
 const Review = z.object({ rating: z.number().int().min(1).max(5), comment: z.string().trim().max(1000).default('') }).strict();
 const Incident = z.object({ severity: z.enum(['low', 'medium', 'high', 'emergency']), description: z.string().trim().min(10).max(2000) }).strict();
 const IncidentUpdate = z.object({ status: z.enum(['open', 'investigating', 'resolved']), note: z.string().trim().min(3).max(2000) }).strict();
+const ReviewQuery = z.object({ filter: z.enum(['all', 'hidden']).default('all') }).strict();
+const Visibility = z.object({ hidden: z.boolean(), reason: z.string().trim().min(3).max(500) }).strict();
 const IncidentQuery = z.object({ status: z.enum(['open', 'investigating', 'resolved', 'all']).default('open') }).strict();
 
 const CHECK_IN_EARLY_MS = 30 * 60_000;
@@ -159,5 +161,29 @@ export async function serviceRoutes(app: FastifyInstance, deps: Deps) {
       return u;
     });
     return { incident: { id: i!.id, status: i!.status } };
+  });
+
+  // ---------- Review moderation (Trust & Safety) ----------
+  // Policy (FTC): hide only abusive content, personal data or reviews unrelated to the service — never
+  // because a review is negative. Hiding is reversible and always requires a reason (audited).
+  app.get('/admin/reviews', { preHandler: requirePermission(deps, 'reviews.moderate') }, async (req) => {
+    const { filter } = ReviewQuery.parse(req.query);
+    const rows = await db.select({ id: reviews.id, bookingId: reviews.bookingId, rating: reviews.rating, comment: reviews.comment, hidden: reviews.hidden,
+      createdAt: reviews.createdAt, caregiverId: reviews.caregiverId, author: users.name })
+      .from(reviews).innerJoin(users, eq(users.id, reviews.clientId))
+      .where(filter === 'hidden' ? eq(reviews.hidden, true) : undefined).orderBy(desc(reviews.createdAt)).limit(200);
+    return { reviews: rows.map((r) => ({ ...r, author: r.author.split(' ')[0] ?? '' })) };
+  });
+
+  app.post('/admin/reviews/:id/visibility', { preHandler: requirePermission(deps, 'reviews.moderate') }, async (req) => {
+    const { id } = IdParam.parse(req.params);
+    const b = Visibility.parse(req.body);
+    const [r] = await db.transaction(async (tx) => {
+      const u = await tx.update(reviews).set({ hidden: b.hidden }).where(eq(reviews.id, id)).returning({ id: reviews.id, hidden: reviews.hidden });
+      if (!u.length) throw new DomainError('not_found', 'Not found', 404);
+      await audit(tx, req, b.hidden ? 'review.hide' : 'review.unhide', `review:${id}`, { reason: b.reason });
+      return u;
+    });
+    return { review: r };
   });
 }
