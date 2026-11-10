@@ -148,4 +148,12 @@ test('messages, check-in, care updates, check-out, review, emergency report and 
   await expect(rv.getByText('Oculta', { exact: true })).toBeVisible();
   await fam.goto(`${WEB}/es/caregivers/${publicId}`);
   await expect(fam.getByText('Puntual y muy cariñosa.')).toHaveCount(0);
+
+  // Off-platform activity: counts per person, never the message text, with a caution about false positives
+  await ts.getByRole('link', { name: 'Fuera de la app' }).click();
+  await expect(ts.getByText('nunca como prueba ni para sancionar automáticamente', { exact: false })).toBeVisible();
+  const person = ts.getByRole('row', { name: new RegExp(`Rosa Svc${run}`) });
+  await expect(person).toContainText('Cuidador');
+  await expect(person.getByRole('cell').nth(5)).toHaveText('1'); // payment outside
+  await expect(ts.locator('main')).not.toContainText('Zelle');
 });

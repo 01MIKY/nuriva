@@ -11,13 +11,13 @@ Aprobada por el propietario el 10 nov 2026 (D7). **Objetivo:** que reservar por 
 | Garantía de suplente | Familias | Si la cuidadora no puede ir: devolución del 100 % y otros cuidadores libres a la misma hora |
 | Cobro garantizado | Cuidadores | Cobran sin perseguir a nadie; en cancelación tardía de la familia conservan el 50 % (política provisional) |
 | Datos de contacto ocultos hasta aceptar | Ambos | Reduce el contacto por fuera antes de reservar |
+| Panel "Fuera de la app" (Trust & Safety) | Plataforma | Recuento por persona de mensajes con contacto o pago por fuera (30, 90 o 365 días), sin mostrar el texto. Cada consulta se audita. El panel advierte que las coincidencias automáticas pueden fallar y no son prueba ni motivo de sanción automática |
 | Niveles e insignias | Cuidadores | Plata y Oro según su historial **en NURIVA**: servicios completados, reseñas visibles, familias que repiten y cancelaciones propias. Insignias con hechos comprobables: bilingüe, familias que repiten, suele responder en menos de 2 h, sin cancelaciones en 90 días. La cuidadora ve qué le falta para el siguiente nivel; si se va de la app, su historial no viaja con ella. Son informativos: no cambian sus condiciones |
 | Aviso en el chat | Ambos | Si un mensaje incluye teléfono, correo, enlace o pago fuera de la app (Zelle, Venmo, efectivo…), se recuerda lo que se pierde fuera de NURIVA antes de enviarlo. **Nunca se bloquea.** Quien lo recibe ve el mismo recordatorio. Solo se guarda la categoría; el texto sigue cifrado |
 | Verificación, seguimiento en vivo, chat, incidentes | Ambos | Todo queda registrado y protegido solo dentro de la app |
 
 ## Siguientes pasos
 - **Sin proveedores nuevos:**
-  - métricas para Trust & Safety: mensajes con señales de contacto o pago por fuera, por cuidador;
   - recibos descargables;
   - "Contratar como niñera fija" con tarifa de colocación (pendiente del abogado).
 - **Requieren decisión del propietario:**

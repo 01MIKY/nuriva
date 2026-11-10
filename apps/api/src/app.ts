@@ -19,6 +19,7 @@ import { identityRoutes } from './routes/identity.js';
 import { serviceRoutes } from './routes/service.js';
 import { favoriteRoutes } from './routes/favorites.js';
 import { reputationRoutes } from './routes/reputation.js';
+import { trustRoutes } from './routes/trust.js';
 
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const options: FastifyServerOptions = {
@@ -61,6 +62,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
     await serviceRoutes(api, deps);
     await favoriteRoutes(api, deps);
     await reputationRoutes(api, deps);
+    await trustRoutes(api, deps);
   }, { prefix: '/v1' });
 
   return app;
