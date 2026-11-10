@@ -22,7 +22,8 @@ Aprobada por el propietario el 10 nov 2026 (D7). **Objetivo:** que reservar por 
   - "Contratar como niñera fija" con tarifa de colocación (pendiente del abogado).
 - **Requieren decisión del propietario:**
   - umbrales de Plata y Oro (provisionales en `packages/domain/src/reputation.ts`): Plata con 10 servicios, nota 4,5 (3 reseñas) y como mucho 1 cancelación en 90 días; Oro con 30 servicios, nota 4,7 (10 reseñas), 3 familias que repiten y ninguna cancelación;
-  comisión que baja con la fidelidad (por ejemplo, 15 % → 10 % → 5 % con la misma familia) y membresía NURIVA Plus para familias frecuentes.
+  - comisión que baja con la fidelidad (por ejemplo, 15 % → 10 % → 5 % con la misma familia);
+  - membresía NURIVA Plus para familias frecuentes.
 - **Requieren proveedor o contrato:**
   - seguro para reservas hechas en la app;
   - verificación continua de antecedentes (Checkr);
