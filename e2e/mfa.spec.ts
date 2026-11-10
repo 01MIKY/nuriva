@@ -65,6 +65,9 @@ test('a family turns on two-step verification and signs in with a code or a reco
   // Sign out, then sign in: password → code
   await page.goto('/en/account');
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  // Wait until the session is really closed; otherwise /signin correctly sends a signed-in user to the account.
+  await expect(page).toHaveURL(/\/en$/);
+  await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible();
   await page.goto('/en/signin');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill(PASSWORD);
@@ -79,6 +82,9 @@ test('a family turns on two-step verification and signs in with a code or a reco
 
   // Sign out, then sign in with a recovery code
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  // Wait until the session is really closed; otherwise /signin correctly sends a signed-in user to the account.
+  await expect(page).toHaveURL(/\/en$/);
+  await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible();
   await page.goto('/en/signin');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill(PASSWORD);

@@ -54,7 +54,10 @@ test('a family saves a caregiver, finds her in Favorites and books again with th
 
   await page.goto(`${WEB}/es/caregivers/${publicId}`);
   const heart = page.getByRole('button', { name: /Guardar en favoritos/ });
+  // The heart is optimistic; wait for the save itself before reloading.
+  const saved = page.waitForResponse((r) => r.url().includes(`/api/v1/favorites/${publicId}`) && r.request().method() === 'PUT');
   await heart.click();
+  expect((await saved).ok()).toBe(true);
   await expect(page.getByRole('button', { name: /En tus favoritos/ })).toHaveAttribute('aria-pressed', 'true');
   await page.reload();
   await expect(page.getByRole('button', { name: /En tus favoritos/ })).toBeVisible();
