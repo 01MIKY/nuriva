@@ -186,10 +186,21 @@ export const bookingStatus = pgEnum('booking_status', ['requested', 'accepted', 
  * Booking requests. The address, notes and a snapshot of the children/pets are encrypted; the caregiver
  * sees full details only after accepting. Prices are an estimate until payments are connected.
  */
+/** A weekly booking: N visits with the same caregiver at the same local time. Each visit is a normal booking. */
+export const bookingSeries = pgTable('booking_series', {
+  id: id(),
+  clientId: fk('client_id').notNull().references(() => users.id),
+  caregiverId: fk('caregiver_id').notNull().references(() => users.id),
+  weeks: integer('weeks').notNull(),
+  createdAt: createdAt(),
+}, (t) => [check('series_weeks_range', sql`${t.weeks} BETWEEN 2 AND 12`)]);
+
 export const bookings = pgTable('bookings', {
   id: id(),
   clientId: fk('client_id').notNull().references(() => users.id),
   caregiverId: fk('caregiver_id').notNull().references(() => users.id),
+  /** Set when the visit belongs to a weekly booking. */
+  seriesId: fk('series_id').references(() => bookingSeries.id),
   division: division('division').notNull(),
   service: text('service').notNull(),
   startAt: timestamp('start_at', { withTimezone: true }).notNull(),
@@ -218,6 +229,7 @@ export const bookings = pgTable('bookings', {
 }, (t) => [
   index('bookings_caregiver_time_idx').on(t.caregiverId, t.startAt),
   index('bookings_client_idx').on(t.clientId, t.startAt),
+  index('bookings_series_idx').on(t.seriesId, t.startAt),
   check('booking_time_order', sql`${t.endAt} > ${t.startAt}`),
   check('payment_status_values', sql`${t.paymentStatus} IN ('none','pending','paid','refunded','partially_refunded')`),
   check('refund_not_above_paid', sql`${t.refundedCents} <= ${t.paidCents}`),

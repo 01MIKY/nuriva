@@ -25,7 +25,7 @@ export function errorHandler(err: FastifyError | Error, req: FastifyRequest, rep
   }
   if (err instanceof DomainError) {
     const key = translatable(err.code);
-    return reply.status(err.status).send({ error: err.code, message: key ? t(locale, key) : err.message });
+    return reply.status(err.status).send({ error: err.code, message: key ? t(locale, key) : err.message, ...(err.details ? { details: err.details } : {}) });
   }
   const status = (err as FastifyError).statusCode;
   if (status === 429) return reply.status(429).send({ error: 'rate_limited', message: t(locale, 'errors.rate_limited') });

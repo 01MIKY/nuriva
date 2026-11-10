@@ -1,11 +1,11 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { and, desc, eq, gt, inArray, lt, sql } from 'drizzle-orm';
-import { bookings, dependents, users, caregiverProfiles } from '@nuriva/db';
+import { bookings, bookingSeries, dependents, users, caregiverProfiles } from '@nuriva/db';
 import { applicationFeeCents, cancellationRefund } from '@nuriva/domain';
 import {
-  DIVISIONS, DomainError, MULTI_DAY_SERVICES, SLOT_HOLDING, assertTransition, contactRevealed, fitsAvailability, publicName,
-  quote, validateSchedule, zonedToUtc, type BookingStatus, type Division, type Service,
+  DIVISIONS, DomainError, MULTI_DAY_SERVICES, SERIES_MAX_WEEKS, SERIES_MIN_WEEKS, SLOT_HOLDING, assertTransition, contactRevealed, fitsAvailability, publicName,
+  quote, validateSchedule, weeklyDates, zonedToUtc, type BookingStatus, type Division, type Service,
 } from '@nuriva/domain';
 import type { Deps } from '../lib/context.js';
 import { audit } from '../lib/audit.js';
@@ -24,6 +24,8 @@ const BookingRequest = z.object({
   end: z.string().regex(/^(([01]\d|2[0-3]):(00|30)|24:00)$/),
   address: z.string().trim().min(10).max(200),
   notes: z.string().trim().max(1000).default(''),
+  /** Weekly booking: the same visit every week for this many weeks (each visit is its own booking). */
+  repeatWeeks: z.number().int().min(SERIES_MIN_WEEKS).max(SERIES_MAX_WEEKS).optional(),
 }).strict();
 
 const IdParam = z.object({ id: z.coerce.number().int().positive() }).strict();
@@ -60,7 +62,28 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
    * What each party may see. Before acceptance the caregiver sees only what is needed to decide
    * (ages / species, area-level location); names, health notes, address and notes are revealed on acceptance.
    */
-  async function present(row: Row, role: 'client' | 'caregiver') {
+  type SeriesInfo = { id: number; index: number; count: number };
+
+  /** Position of each visit inside its weekly booking ("visit 2 of 8"), for many bookings in one query. */
+  async function seriesInfo(rows: Row[]): Promise<Map<number, SeriesInfo>> {
+    const ids = [...new Set(rows.map((r) => r.seriesId).filter((x): x is number => x !== null))];
+    const out = new Map<number, SeriesInfo>();
+    if (!ids.length) return out;
+    const all = await db.select({ id: bookings.id, seriesId: bookings.seriesId }).from(bookings)
+      .where(inArray(bookings.seriesId, ids)).orderBy(bookings.seriesId, bookings.startAt, bookings.id);
+    const counts = new Map<number, number>();
+    for (const b of all) counts.set(b.seriesId!, (counts.get(b.seriesId!) ?? 0) + 1);
+    const seen = new Map<number, number>();
+    for (const b of all) {
+      const i = (seen.get(b.seriesId!) ?? 0) + 1;
+      seen.set(b.seriesId!, i);
+      out.set(b.id, { id: b.seriesId!, index: i, count: counts.get(b.seriesId!)! });
+    }
+    return out;
+  }
+
+  async function present(row: Row, role: 'client' | 'caregiver', series?: Map<number, SeriesInfo>) {
+    const s = row.seriesId ? (series ?? await seriesInfo([row])).get(row.id) ?? null : null;
     const [[client], [cg]] = await Promise.all([
       db.select({ name: users.name }).from(users).where(eq(users.id, row.clientId)),
       db.select({ name: users.name, publicId: caregiverProfiles.publicId }).from(users)
@@ -85,6 +108,7 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
       viewerRole: role,
       payment: { status: row.paymentStatus, paidCents: row.paidCents, refundedCents: row.refundedCents, paidAt: row.paidAt },
       paymentsEnabled: deps.config.paymentsEnabled,
+      series: s,
     };
   }
 
@@ -97,13 +121,19 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
       throw new DomainError('not_bookable', 'Not bookable', 409);
     }
     const multiDay = MULTI_DAY_SERVICES.has(b.service as Service);
-    const startAt = zonedToUtc(b.date, b.start);
     const endsNextDay = b.end === '24:00' || b.end <= b.start;
-    const endAt = zonedToUtc(endsNextDay ? nextDay(b.date) : b.date, b.end === '24:00' ? '00:00' : b.end);
-    const minutes = validateSchedule({ division: b.division, service: b.service, startAt, endAt });
-    if (!fitsAvailability(await loadAvailability(deps, row.userId), startAt, endAt, { multiDay })) {
-      throw new DomainError('outside_availability', 'Outside availability', 409);
-    }
+    // One visit, or the same visit every week. Every visit must be valid; otherwise nothing is created.
+    const visits = weeklyDates(b.date, b.repeatWeeks ?? 1).map((date) => ({
+      date,
+      startAt: zonedToUtc(date, b.start),
+      endAt: zonedToUtc(endsNextDay ? nextDay(date) : date, b.end === '24:00' ? '00:00' : b.end),
+    }));
+    const minutes = validateSchedule({ division: b.division, service: b.service, startAt: visits[0]!.startAt, endAt: visits[0]!.endAt });
+    for (const v of visits.slice(1)) validateSchedule({ division: b.division, service: b.service, startAt: v.startAt, endAt: v.endAt });
+    const windows = await loadAvailability(deps, row.userId);
+    const outside = visits.filter((v) => !fitsAvailability(windows, v.startAt, v.endAt, { multiDay }));
+    if (outside.length === visits.length) throw new DomainError('outside_availability', 'Outside availability', 409);
+    if (outside.length) throw new DomainError('series_conflict', 'Some weeks are unavailable', 409, { dates: outside.map((v) => v.date) });
 
     const kind = b.division === 'kids' ? 'child' : 'pet';
     const deps_ = await db.select().from(dependents).where(and(eq(dependents.ownerId, req.user!.id), inArray(dependents.id, b.dependentIds)));
@@ -116,20 +146,33 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
     const created = await db.transaction(async (tx) => {
       // Serialise requests for this caregiver, then re-check overlap inside the lock.
       await tx.execute(sql`SELECT 1 FROM caregiver_profiles WHERE user_id = ${row.userId} FOR UPDATE`);
-      const clash = await tx.select({ id: bookings.id }).from(bookings).where(and(
-        eq(bookings.caregiverId, row.userId), inArray(bookings.status, [...SLOT_HOLDING]), lt(bookings.startAt, endAt), gt(bookings.endAt, startAt),
-      )).limit(1);
-      if (clash.length) throw new DomainError('slot_taken', 'Slot taken', 409);
-      const [ins] = await tx.insert(bookings).values({
-        clientId: req.user!.id, caregiverId: row.userId, division: b.division, service: b.service, startAt, endAt,
-        addressEnc: cipher.encrypt(b.address), notesEnc: b.notes ? cipher.encrypt(b.notes) : null,
-        dependentsEnc: cipher.encryptJson(snapshot), dependentCount: snapshot.length,
-        hourlyRateCents: q.hourlyRateCents, subtotalCents: q.subtotalCents, clientFeeCents: q.clientFeeCents, totalCents: q.totalCents,
-      }).returning();
-      await audit(tx, req, 'booking.request', `booking:${ins!.id}`, { division: b.division, service: b.service });
-      return ins!;
+      const taken: string[] = [];
+      for (const v of visits) {
+        const clash = await tx.select({ id: bookings.id }).from(bookings).where(and(
+          eq(bookings.caregiverId, row.userId), inArray(bookings.status, [...SLOT_HOLDING]), lt(bookings.startAt, v.endAt), gt(bookings.endAt, v.startAt),
+        )).limit(1);
+        if (clash.length) taken.push(v.date);
+      }
+      if (taken.length === visits.length && visits.length === 1) throw new DomainError('slot_taken', 'Slot taken', 409);
+      if (taken.length) throw new DomainError('series_conflict', 'Some weeks are unavailable', 409, { dates: taken });
+      const [series] = visits.length > 1
+        ? await tx.insert(bookingSeries).values({ clientId: req.user!.id, caregiverId: row.userId, weeks: visits.length }).returning()
+        : [undefined];
+      const rows: Row[] = [];
+      for (const v of visits) {
+        const [ins] = await tx.insert(bookings).values({
+          clientId: req.user!.id, caregiverId: row.userId, seriesId: series?.id ?? null, division: b.division, service: b.service, startAt: v.startAt, endAt: v.endAt,
+          addressEnc: cipher.encrypt(b.address), notesEnc: b.notes ? cipher.encrypt(b.notes) : null,
+          dependentsEnc: cipher.encryptJson(snapshot), dependentCount: snapshot.length,
+          hourlyRateCents: q.hourlyRateCents, subtotalCents: q.subtotalCents, clientFeeCents: q.clientFeeCents, totalCents: q.totalCents,
+        }).returning();
+        await audit(tx, req, 'booking.request', `booking:${ins!.id}`, { division: b.division, service: b.service, ...(series ? { seriesId: series.id } : {}) });
+        rows.push(ins!);
+      }
+      return rows;
     });
-    return reply.status(201).send({ booking: await present(created, 'client') });
+    const info = await seriesInfo(created);
+    return reply.status(201).send({ booking: await present(created[0]!, 'client', info), visits: created.length });
   });
 
   app.get('/bookings', { preHandler: requireRole('client', 'caregiver') }, async (req) => {
@@ -138,7 +181,8 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
       .where(u.role === 'client' ? eq(bookings.clientId, u.id) : eq(bookings.caregiverId, u.id))
       .orderBy(desc(bookings.startAt)).limit(100);
     const role = u.role === 'client' ? 'client' : 'caregiver';
-    return { bookings: await Promise.all(rows.map((r) => present(r, role))) };
+    const info = await seriesInfo(rows);
+    return { bookings: await Promise.all(rows.map((r) => present(r, role, info))) };
   });
 
   app.get('/bookings/:id', { preHandler: requireRole('client', 'caregiver') }, async (req) => {
@@ -150,6 +194,11 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
   async function transition(req: FastifyRequest, to: BookingStatus) {
     const { id } = IdParam.parse(req.params);
     const { row, role } = await loadFor(req, id);
+    return { booking: await present(await applyTransition(req, row, role, to), role) };
+  }
+
+  /** One state change of one booking, with every check and refund rule. Shared by single and weekly actions. */
+  async function applyTransition(req: FastifyRequest, row: Row, role: 'client' | 'caregiver', to: BookingStatus): Promise<Row> {
     assertTransition(row.status, to, role);
     if (to === 'accepted') {
       // A caregiver can only accept while every approval is still valid and the service is still active.
@@ -181,10 +230,10 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
         ...(to === 'cancelled' ? { cancelledBy: req.user!.id } : {}),
         ...(refund > 0 ? { refundedCents: refunded, paymentStatus: refunded >= cur.paidCents ? 'refunded' : 'partially_refunded' } : {}),
       }).where(eq(bookings.id, row.id)).returning();
-      await audit(tx, req, `booking.${to}`, `booking:${row.id}`, { from: row.status, ...(refund > 0 ? { refundCents: refund } : {}) });
+      await audit(tx, req, `booking.${to}`, `booking:${row.id}`, { from: row.status, ...(refund > 0 ? { refundCents: refund } : {}), ...(row.seriesId ? { seriesId: row.seriesId } : {}) });
       return u!;
     });
-    return { booking: await present(updated, role) };
+    return updated;
   }
 
   const cg = { preHandler: requireRole('caregiver') };
@@ -193,6 +242,41 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
   app.post('/bookings/:id/cancel', { preHandler: requireRole('client', 'caregiver') }, (req) => {
     CancelBody.parse(req.body ?? {});
     return transition(req, 'cancelled');
+  });
+
+  /**
+   * Weekly bookings. The caregiver accepts or declines every pending visit at once; either party can cancel
+   * this visit and all later ones that have not started. Each visit goes through the same single-booking rules
+   * (checks, refunds, audit) in its own transaction, so a visit that changed meanwhile is simply skipped.
+   */
+  async function seriesAction(req: FastifyRequest, to: 'accepted' | 'declined' | 'cancelled') {
+    const { id } = IdParam.parse(req.params);
+    const { row, role } = await loadFor(req, id);
+    if (!row.seriesId) throw new DomainError('not_series', 'Not a weekly booking', 409);
+    const from: BookingStatus[] = to === 'cancelled' ? ['requested', 'accepted'] : ['requested'];
+    const targets = await db.select().from(bookings).where(and(
+      eq(bookings.seriesId, row.seriesId), inArray(bookings.status, from), gt(bookings.startAt, new Date()),
+      ...(to === 'cancelled' ? [gt(bookings.startAt, new Date(row.startAt.getTime() - 1))] : []),
+    )).orderBy(bookings.startAt);
+    let changed = 0;
+    for (const t of targets) {
+      try {
+        await applyTransition(req, t, role, to);
+        changed++;
+      } catch (e) {
+        // Accepting stops at the first visit that cannot be accepted (e.g. approvals changed); nothing else is touched.
+        if (to === 'accepted' && changed === 0) throw e;
+        if (!(e instanceof DomainError) || (e.code !== 'stale' && e.code !== 'invalid_transition')) throw e;
+      }
+    }
+    const [cur] = await db.select().from(bookings).where(eq(bookings.id, row.id));
+    return { booking: await present(cur!, role), changed };
+  }
+  app.post('/bookings/:id/series/accept', cg, (req) => seriesAction(req, 'accepted'));
+  app.post('/bookings/:id/series/decline', cg, (req) => seriesAction(req, 'declined'));
+  app.post('/bookings/:id/series/cancel', { preHandler: requireRole('client', 'caregiver') }, (req) => {
+    CancelBody.parse(req.body ?? {});
+    return seriesAction(req, 'cancelled');
   });
 
   const payments = async () => {

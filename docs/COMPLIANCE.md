@@ -26,6 +26,11 @@
 - **Incidentes y reporte obligatorio:** la app muestra el 911 y la Florida Abuse Hotline (1-800-962-2873) y avisa a Trust & Safety, pero **no sustituye** el reporte obligatorio (Fla. Stat. 39.201). Falta el procedimiento escrito de Trust & Safety (plazos, quién llama a la línea, conservación de evidencias). Para el abogado.
 - **Reseñas (FTC):** solo de reservas completadas, una por reserva y por la propia familia. Trust & Safety puede ocultar reseñas abusivas, con datos personales o ajenas al servicio; el motivo es obligatorio y queda auditado, y la pantalla recuerda que no se ocultan reseñas por ser negativas (la Consumer Review Fairness Act y la norma de la FTC de 2024 sobre reseñas castigan suprimir reseñas negativas). Para el abogado: aprobar la política de moderación por escrito y si conviene avisar al autor cuando se oculta su reseña.
 
+- **Reservas semanales y empleo doméstico:** con las reservas recurrentes, una familia puede pagar a la misma cuidadora de forma regular. Para el abogado y un contador:
+  - si al superar el umbral anual del IRS la familia pasa a ser empleadora doméstica (*nanny tax*, Schedule H);
+  - cómo informarlo sin dar asesoría fiscal;
+  - si la recurrencia afecta a la clasificación de la cuidadora como independiente (D5).
+
 ## Cómo lo aplica el software
 - **Minimización de datos de menores:** solo nombre o apodo y edad en años. Sin fecha de nacimiento, fotos ni colegio. Todo cifrado y visible solo para el dueño (y en el futuro, para el cuidador de una reserva aceptada). Pregunta para el abogado: retención y borrado de estos datos al cerrar la cuenta.
 - **Gate de servicios:** ningún servicio se puede reservar sin una fila activa en `service_activations` con `compliance_ref` (referencia al documento de aprobación) creada por un superadmin. Cada cambio queda auditado.

@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { t, formatMoney, type Locale, type MessageKey } from '@nuriva/i18n';
-import { quote, MULTI_DAY_SERVICES, type Service } from '@nuriva/domain';
+import { quote, weeklyDates, MULTI_DAY_SERVICES, SERIES_MAX_WEEKS, SERIES_MIN_WEEKS, type Service } from '@nuriva/domain';
 import { Alert, Button, Card, Field } from '@nuriva/ui';
 import { apiSend } from '@/lib/client-api';
 import { HALF_HOURS, type BookingView, type Window } from '@/lib/bookings';
@@ -34,6 +34,9 @@ export function BookingForm({ locale, caregiver, household, windows, minDate, pa
   const [selected, setSelected] = useState<number[]>(initial?.dependentIds ?? []);
   const [start, setStart] = useState(initial?.start ?? '18:00');
   const [end, setEnd] = useState(initial?.end ?? '22:00');
+  const [date, setDate] = useState('');
+  const [repeat, setRepeat] = useState(false);
+  const [weeks, setWeeks] = useState(4);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -49,11 +52,13 @@ export function BookingForm({ locale, caregiver, household, windows, minDate, pa
   }, [start, end]);
   const q = minutes > 0 ? quote(caregiver.hourlyRateCents, minutes) : null;
   const money = (c: number) => formatMoney(locale, c);
+  const visits = repeat ? weeks : 1;
+  const shortDate = (d: string) => new Intl.DateTimeFormat(locale === 'es' ? 'es-US' : 'en-US', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${d}T12:00:00Z`));
+  const preview = repeat && /^\d{4}-\d{2}-\d{2}$/.test(date) ? weeklyDates(date, weeks) : [];
 
   async function submit(ev: FormEvent<HTMLFormElement>) {
     ev.preventDefault();
     const f = new FormData(ev.currentTarget);
-    const date = String(f.get('date') ?? '');
     const address = String(f.get('address') ?? '').trim();
     const e: Record<string, string> = {};
     if (!selected.length) e.who = tr('web.book.chooseOne');
@@ -72,9 +77,13 @@ export function BookingForm({ locale, caregiver, household, windows, minDate, pa
     setBusy(true);
     const r = await apiSend<{ booking: BookingView }>('POST', '/v1/bookings', {
       caregiverId: caregiver.id, division, service, dependentIds: selected, date, start, end, address, notes: String(f.get('notes') ?? '').trim(),
+      ...(repeat ? { repeatWeeks: weeks } : {}),
     }, locale);
     setBusy(false);
-    if (!r.ok) return setFormError(r.error.message || tr('errors.internal'));
+    if (!r.ok) {
+      const dates = r.error.details?.dates;
+      return setFormError([r.error.message || tr('errors.internal'), dates?.length ? tr('web.book.unavailableWeeks', { dates: dates.map(shortDate).join(', ') }) : ''].filter(Boolean).join(' '));
+    }
     router.push(`/${locale}/bookings/${r.data.booking.id}?sent=1`);
     router.refresh();
   }
@@ -118,7 +127,7 @@ export function BookingForm({ locale, caregiver, household, windows, minDate, pa
         </fieldset>
 
         <div className="form-grid">
-          <Field label={tr('web.book.date')} name="date" type="date" min={minDate} error={errors.date} />
+          <Field label={tr('web.book.date')} name="date" type="date" min={minDate} error={errors.date} value={date} onChange={(e) => setDate(e.target.value)} />
           <div className="n-field">
             <label className="n-label" htmlFor="bk-start">{tr('web.book.start')}</label>
             <select id="bk-start" className="n-input" value={start} onChange={(e) => setStart(e.target.value)}>
@@ -131,6 +140,29 @@ export function BookingForm({ locale, caregiver, household, windows, minDate, pa
               {[...HALF_HOURS.slice(1), '24:00'].map((h) => <option key={h} value={h}>{h === '24:00' ? tr('web.availability.midnight') : h}</option>)}
             </select>
           </div>
+        </div>
+
+        <div className="repeat-box n-stack" style={{ ['--gap' as string]: '10px' }}>
+          <label className="check-row">
+            <input type="checkbox" checked={repeat} onChange={(e) => setRepeat(e.target.checked)} />
+            <span><strong>{tr('web.book.repeat')}</strong><br /><span className="n-hint">{tr('web.book.repeatHint')}</span></span>
+          </label>
+          {repeat && (
+            <>
+              <div className="n-field">
+                <label className="n-label" htmlFor="bk-weeks">{tr('web.book.repeatWeeks')}</label>
+                <select id="bk-weeks" className="n-input" value={weeks} onChange={(e) => setWeeks(Number(e.target.value))}>
+                  {Array.from({ length: SERIES_MAX_WEEKS - SERIES_MIN_WEEKS + 1 }, (_, i) => i + SERIES_MIN_WEEKS).map((n) => <option key={n} value={n}>{tr('web.book.weeksOption', { n })}</option>)}
+                </select>
+              </div>
+              {preview.length > 0 && (
+                <div className="n-stack" style={{ ['--gap' as string]: '6px' }}>
+                  <span className="n-hint">{tr('web.book.repeatPreview', { n: preview.length })}</span>
+                  <ul className="n-chips">{preview.map((d) => <li key={d} className="n-chip">{shortDate(d)}</li>)}</ul>
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         <Field label={tr('web.book.address')} name="address" autoComplete="street-address" hint={tr('web.book.addressHint')} error={errors.address} maxLength={200} defaultValue={initial?.address} />
@@ -149,7 +181,8 @@ export function BookingForm({ locale, caregiver, household, windows, minDate, pa
               <dl className="sum">
                 <div><dt>{tr('web.book.subtotal', { hours: (minutes / 60).toLocaleString(locale), rate: money(caregiver.hourlyRateCents) })}</dt><dd>{money(q.subtotalCents)}</dd></div>
                 <div><dt>{tr('web.book.fee')}</dt><dd>{money(q.clientFeeCents)}</dd></div>
-                <div className="sum-total"><dt>{tr('web.book.total')}</dt><dd>{money(q.totalCents)}</dd></div>
+                <div className="sum-total"><dt>{tr(visits > 1 ? 'web.book.perVisit' : 'web.book.total')}</dt><dd>{money(q.totalCents)}</dd></div>
+                {visits > 1 && <div className="sum-total"><dt>{tr('web.book.seriesTotal', { n: visits })}</dt><dd>{money(q.totalCents * visits)}</dd></div>}
               </dl>
             )}
             <p className="n-hint">{tr(paymentsEnabled ? 'web.pay.chargeAfterAccept' : 'web.book.noCharge')}</p>

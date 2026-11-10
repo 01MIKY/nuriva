@@ -34,6 +34,7 @@ export default async function BookingsPage({ params }: { params: Promise<{ local
                   <Badge tone={statusTone[b.status]}>{t(`bookingStatus.${b.status}`)}</Badge>
                 </span>
                 <span>{formatRange(locale, b.startAt, b.endAt)}</span>
+                {b.series && <span className="series-tag">↻ {t('web.bookings.seriesBadge', { i: b.series.index, n: b.series.count })}</span>}
                 <span className="n-muted">
                   {isCg ? t('web.bookings.from', { name: b.client.firstName }) : t('web.bookings.with', { name: b.caregiver.displayName })}
                   {' · '}{formatMoney(locale, isCg ? b.price.subtotalCents : b.price.totalCents)}

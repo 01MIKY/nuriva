@@ -34,6 +34,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
         <Badge tone={statusTone[b.status]}>{t(`bookingStatus.${b.status}`)}</Badge>
       </div>
       <p className="n-muted">{isCg ? t('web.bookings.from', { name: b.client.firstName }) : t('web.bookings.with', { name: b.caregiver.displayName })}</p>
+      {b.series && <p className="series-tag">↻ {t('web.bookings.seriesInfo', { i: b.series.index, n: b.series.count })}</p>}
       {!isCg && b.caregiver.publicId && (b.status === 'completed' || b.status === 'cancelled') && (
         <Link className={buttonClass('primary')} href={`/${locale}/book/${b.caregiver.publicId}?again=${b.id}`}>{t('web.book.again')}</Link>
       )}
@@ -76,7 +77,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
       {['accepted', 'in_progress', 'completed'].includes(b.status) && <TimelinePanel locale={locale} id={b.id} role={b.viewerRole} status={b.status} />}
       {b.status === 'completed' && b.viewerRole === 'client' && <ReviewPanel locale={locale} id={b.id} />}
       <ChatPanel locale={locale} id={b.id} closed={b.status === 'declined' || b.status === 'cancelled'} />
-      <BookingActions locale={locale} id={b.id} status={b.status} role={b.viewerRole} />
+      <BookingActions locale={locale} id={b.id} status={b.status} role={b.viewerRole} weekly={b.series !== null} />
       <IncidentPanel locale={locale} id={b.id} division={b.division} />
     </div>
   );

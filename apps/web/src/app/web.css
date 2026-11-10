@@ -262,3 +262,8 @@ a.toggle-chip { text-decoration: none; }
 .fav-body { display: grid; gap: 2px; flex: 1 1 180px; min-width: 0; }
 .fav-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .empty-state { align-items: flex-start; }
+/* Weekly bookings */
+.repeat-box { padding: 14px; border-radius: var(--r-md, 14px); border: 1.5px dashed var(--line); background: var(--surface); }
+.check-row { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+.check-row input { width: 22px; height: 22px; margin-top: 2px; flex: none; accent-color: var(--primary); }
+.series-tag { font-size: 0.8rem; font-weight: 700; color: var(--n-sage-ink); }

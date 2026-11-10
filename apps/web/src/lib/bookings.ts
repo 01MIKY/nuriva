@@ -12,6 +12,8 @@ export interface BookingView {
   address: string | null; notes: string | null; detailsRevealed: boolean; viewerRole: 'client' | 'caregiver';
   payment: { status: 'none' | 'pending' | 'paid' | 'refunded' | 'partially_refunded'; paidCents: number; refundedCents: number };
   paymentsEnabled: boolean;
+  /** Weekly booking position, or null for a single booking. */
+  series: { id: number; index: number; count: number } | null;
 }
 
 /** Half-hour options for time pickers. */

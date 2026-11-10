@@ -5,6 +5,8 @@ export interface ApiError {
   error: string;
   message: string;
   fields?: Array<{ path: string; code: string }>;
+  /** Safe extra details, e.g. `{ dates: [...] }` for a weekly booking with unavailable weeks. */
+  details?: { dates?: string[] };
 }
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: ApiError };
 
